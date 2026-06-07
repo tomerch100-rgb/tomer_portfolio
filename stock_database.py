@@ -1,7 +1,7 @@
-
 import psycopg2
-import list_convert as lc
-class PortfolioDB:
+import models as lc
+import security as hash
+class PortfolioDB:  
     def __init__(self):
         self.conn = psycopg2.connect(
         dbname="stock_portfolio",
@@ -14,28 +14,34 @@ class PortfolioDB:
         self.cur.close()
         self.conn.close()    
 
+    def insert_into_portfolio(self,user_id,stock,shares,price_by,sector):
+        self.cur.execute(" insert into portfolio (user_id,ticker , shares, avg_price,sector) values (%s,%s,%s,%s,%s)",(user_id,stock,shares,price_by,sector))
+        self.conn.commit()
     
-    def log_transaction(self,stock,action_type,shares,avg_price,realized_pl):
-        self.cur.execute("insert into transactions (ticker,type,shares,price,realized_pl) values(%s,%s,%s,%s,%s)" ,(stock,action_type,shares,avg_price,realized_pl))
-         
+    def log_transaction(self,user_id,stock,action_type,shares,avg_price,realized_pl):
+        self.cur.execute("insert into transactions (user_id,ticker,type,shares,price,realized_pl) values(%s,%s,%s,%s,%s,%s)" ,(user_id,stock,action_type,shares,avg_price,realized_pl))
+        self.conn.commit()
 
-    def  get_portfolio_stock (self,stock) :
-        self.cur.execute("select shares,avg_price from portfolio where ticker = %s", (stock,) )
+    def  get_portfolio_stock (self,user_id,stock) :
+        self.cur.execute("select shares,avg_price from portfolio where ticker = %s and user_id = %s" , (stock,user_id) )
         pick = self.cur.fetchone()  
+        if pick is None :
+            return None
         hold = lc.Holding(stock,pick[0],pick[1])
         return hold
     
-    def insert_into_portfolio(self,stock,shares,price_by):
-        self.cur.execute(" insert into portfolio (ticker , shares, avg_price) values (%s,%s,%s)",(stock,shares,price_by))
 
-    def  update_portfolio (self,sher_st,avg_st,stock)   :
-        self.cur.execute(" update  portfolio set shares = %s , avg_price = %s where ticker = %s ", (sher_st,avg_st,stock))
+    def  update_portfolio (self,user_id,sher_st,avg_st,stock)   :
+        self.cur.execute(" update  portfolio set shares = %s , avg_price = %s where ticker = %s and user_id = %s", (sher_st,avg_st,stock,user_id))
+        self.conn.commit()
 
-    def delet_from_portfolio (self,stock) :
-        self.cur.execute("delete from portfolio where ticker = %s" , (stock,))
+    def delet_from_portfolio (self,user_id,stock) :
+        self.cur.execute("delete from portfolio where ticker = %s and user_id = %s" , (stock,user_id))
+        self.conn.commit()
+
     
-    def select_all (self) :
-        self.cur.execute("SELECT ticker, shares, avg_price from portfolio;")
+    def select_all (self,user_id) :
+        self.cur.execute("SELECT ticker, shares, avg_price from portfolio where user_id = %s" , (user_id,))
         rows =  self.cur.fetchall()
         portfolio_list =  []
         for row in rows :
@@ -44,20 +50,20 @@ class PortfolioDB:
         return portfolio_list
         
     
-    def total_profit_loss (self):
-        self.cur.execute("select sum (realized_pl) from transactions ")
+    def total_profit_loss (self,user_id):
+        self.cur.execute("select sum (realized_pl) from transactions where user_id = %s" , (user_id,))
         return self.cur.fetchone()
 
-    def insert_portfolio_history (self,total_portfolio_worth):
-        self.cur.execute ("insert into portfolio_history (total_value) values (%s)",(total_portfolio_worth,))
+    def insert_portfolio_history (self,user_id,total_portfolio_worth):
+        self.cur.execute ("insert into portfolio_history (user_id,total_value) values (%s,%s) ",(user_id,total_portfolio_worth))
         self.conn.commit()
 
-    def select_portfolio_history (self):
-        self.cur.execute("select total_value, calculation_date from portfolio_history")
+    def select_portfolio_history (self,user_id):
+        self.cur.execute("select total_value, calculation_date from portfolio_history where user_id = %s order by calculation_date",(user_id,))
         return  self.cur.fetchall()    
     
-    def log_history (self) :
-        self.cur.execute("select ticker,type,shares,price,realized_pl,transaction_date from transactions order by transaction_date desc")
+    def log_history (self,user_id) :
+        self.cur.execute("select ticker,type,shares,price,realized_pl,transaction_date from transactions where user_id = %s order by transaction_date desc",(user_id,))
         rows =  self.cur.fetchall()
         log_list = []
         for row in rows :
@@ -65,11 +71,53 @@ class PortfolioDB:
             log_list.append(log)
         return log_list    
 
-    def total_value(self):
-        self.cur.execute("SELECT COALESCE(SUM(shares*avg_price), 0) FROM portfolio")
+    def total_value(self,user_id):
+        self.cur.execute("SELECT COALESCE(SUM(shares*avg_price), 0) FROM portfolio where user_id = %s",(user_id,))
         result = self.cur.fetchone()
         return float(result[0])
         
-    def number_of_positions(self):
-        self.cur.execute("select count(*) from portfolio")
+    def number_of_positions(self,user_id):
+        self.cur.execute("select count(*) from portfolio where user_id = %s",(user_id,))
         return self.cur.fetchone()[0]
+    
+    def register_user(self,username,password,email):
+        safty = hash.hash_password (password)
+        self.cur.execute("insert into users (username,password_hash,email) values (%s,%s,%s)",(username,safty ,email))
+        self.conn.commit()
+         
+    def user_exists(self, username):
+    # שואלים את ה-DB: "האם יש מישהו כזה?"
+        self.cur.execute("SELECT 1 FROM users WHERE username = %s", (username,))
+        result = self.cur.fetchone()
+    # אם קיבלנו משהו בחזרה (result הוא לא None), סימן שהמשתמש קיים
+        return result is not None
+    
+    def check_login_user(self,username,password) :
+        self.cur.execute("SELECT user_id, password_hash FROM users WHERE username = %s", (username,))
+        result = self.cur.fetchone()
+    # אם המשתמש בכלל לא קיים ב-DB
+        if result is None:
+                return None
+        user_id = result[0]
+        stored_hash = result[1]
+    # בודקים אם הסיסמה מתאימה להאש
+        if hash.verify_password(stored_hash, password):
+            return user_id  # הסיסמה נכונה! מחזירים את ה-ID
+        else :
+            return None
+
+        
+    def get_me (self,user_id):
+        self.cur.execute("SELECT user_id,username, email FROM users WHERE user_id = %s", (user_id,))
+        result = self.cur.fetchone()
+        for info in result:
+            personal_dic = {
+                "user_id" : result[0],
+                "username" :  info[1],
+                    "email" : info[2]
+            }
+            return personal_dic
+
+
+
+        

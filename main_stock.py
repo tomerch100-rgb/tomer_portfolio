@@ -1,6 +1,5 @@
 import portfolio_function as pf
 import stock_database as sd
-import class Holding as ch
 
 try:
     pf.save_current_portfolio_value()
