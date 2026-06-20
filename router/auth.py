@@ -1,6 +1,6 @@
 from fastapi import APIRouter ,HTTPException
 from pydantic import BaseModel, EmailStr
-import portfolio_function as pf
+import connectors.portfolio_function as pf
 import security 
 
 # יוצרים את הראוטר

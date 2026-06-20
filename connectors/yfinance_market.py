@@ -1,5 +1,5 @@
 import yfinance as yf
-import stock_cache as cache
+import connectors.stock_cache as cache
 
 def ticker_previousClose(stock):
     stock = stock.upper()

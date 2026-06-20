@@ -1,16 +1,14 @@
-import yfinance_market as ym
-import helpers_stock as hp
-import stock_charts as sc
-import matplotlib.pyplot as plt
+import connectors.yfinance_market as ym
+import connectors.helpers_stock as hp
+import connectors.stock_charts as sc
 import stock_database as db 
-import models as lc
-import security as hash
-#make a pointer 
 pdb = db.PortfolioDB() 
 
 
-def get_me ():
-    
+def get_me (user_id):
+    result =  pdb.get_me_db (user_id)
+    return result
+
 
 def register_user(username, password, email):
     if pdb.user_exists(username):
@@ -24,13 +22,13 @@ def login_user(username,password) :
     if user_id is not None:
         return user_id 
     else:
-        return "invalid username or password"
+        return None
         
 def add_stock (user_id,stock,shares,price_by):
 #you need to enter the name of the stock the price that 1 stock worth and how many shers    
     stock = stock.upper()
     if ym.ticker_previousClose(stock) is None:
-        return "The stock does not exist in the market"
+        return "The stock does not exist in the market", None
     worth = price_by * shares
     save_line = pdb.get_portfolio_stock(user_id,stock)
     if save_line == None:
@@ -176,10 +174,24 @@ def portfolio_summary (user_id) :
     "total_profit": hp.sum_pl(user_id) ,
     "daily_change": hp.sum_daily_change(user_id),
     "number_of_positions":pdb.number_of_positions(user_id)
+
 }
 
 
+def post_watchlist (stock,user_id ):
+    if ym.ticker_previousClose(stock) is None:
+        return "The stock does not exist in the market", None
+    try:
+        pdb.post_watchlist_db(user_id,stock)
+        return "success"
+    except Exception :
+        return "Stock is already in your watchlist"
 
+def get_watchlist ( user_id) : 
+    personal_li = pdb.get_watchlist_db(user_id)
+    if personal_li is None :
+        return []
+    return personal_li
 
 
 

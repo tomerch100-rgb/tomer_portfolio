@@ -1,0 +1,22 @@
+ Created by venv; see https://docs.python.org/3/library/venv.html
+.env
+# התעלמות מהסביבה הוירטואלית של פייתון
+.venv/
+venv/
+ENV/
+
+# התעלמות מקבצי קאש זמניים של פייתון
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# התעלמות מקבצי מערכת הפעלה זמניים
+.DS_Store
+Thumbs.db
+.env
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class

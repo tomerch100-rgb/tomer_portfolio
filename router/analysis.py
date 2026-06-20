@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-import portfolio_function as pf
+import connectors.portfolio_function as pf
 router = APIRouter()
 
 @router.get ("/stock_analysis")

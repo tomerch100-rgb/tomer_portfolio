@@ -1,4 +1,4 @@
-import yfinance_market as ym
+import connectors.yfinance_market as ym
 import stock_database as db 
 pdb = db.PortfolioDB() 
 

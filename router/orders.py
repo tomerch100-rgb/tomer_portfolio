@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 import security
 from pydantic import BaseModel
-import portfolio_function as pf
+import connectors.portfolio_function as pf
 router = APIRouter()
 
 class Stock_info (BaseModel):

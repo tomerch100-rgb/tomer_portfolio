@@ -1,5 +1,5 @@
 import psycopg2
-import models as lc
+import connectors.models as lc
 import security as hash
 class PortfolioDB:  
     def __init__(self):
@@ -107,16 +107,38 @@ class PortfolioDB:
             return None
 
         
-    def get_me (self,user_id):
+    def get_me_db (self,user_id):
         self.cur.execute("SELECT user_id,username, email FROM users WHERE user_id = %s", (user_id,))
         result = self.cur.fetchone()
-        for info in result:
-            personal_dic = {
+        if not result :
+            return None
+        personal_dic = {
                 "user_id" : result[0],
-                "username" :  info[1],
-                    "email" : info[2]
+                "username" :  result[1],
+                    "email" : result[2]
             }
-            return personal_dic
+        return personal_dic
+
+    def post_watchlist_db  (self,user_id,stock) :
+        self.cur.execute("insert into watchlist (user_id,ticker) values(%s,%s)" ,(user_id,stock.upper()))
+        self.conn.commit()
+
+    def get_watchlist_db (self,user_id) :
+        self.cur.execute("select ticker from watchlist where user_id = %s order by order_index",(user_id,))
+        pick = self.cur.fetchall()  
+        if pick is None :
+            return None
+        personal_list = []
+        for each_stock in pick : 
+            personal_list.append(each_stock[0])
+        return personal_list    
+
+
+
+        
+
+
+
 
 
 

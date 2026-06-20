@@ -1,4 +1,4 @@
-import portfolio_function as pf
+import connectors.portfolio_function as pf
 import stock_database as sd
 
 try:
