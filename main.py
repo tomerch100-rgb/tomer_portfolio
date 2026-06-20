@@ -12,7 +12,6 @@ app.include_router(charts_r.router, prefix= "/charts")
 app.include_router(home_page.router , prefix= "/home")
 app.include_router(watchlist.router , prefix= "/watchlist")
 
-
 if __name__ == "__main__":
     # הרצת השרת על פורט 8000
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

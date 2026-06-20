@@ -15,4 +15,3 @@ def portfolio_summary (user_id : int = Depends (security.get_current_user_id)) :
 @router.get ("/transaction_log")
 def transaction_log (user_id : int =  Depends (security.get_current_user_id)) :
     return pf.transaction_log_history (user_id)
-
