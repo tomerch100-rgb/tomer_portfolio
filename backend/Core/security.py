@@ -1,14 +1,13 @@
 import bcrypt
-from fastapi import HTTPException, status
+from fastapi import Depends, Request, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
-from fastapi import Depends
 from datetime import datetime, timedelta, timezone
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-safe = HTTPBearer()
+safe = HTTPBearer(auto_error=False)
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
@@ -52,8 +51,16 @@ def verify_token (token:str) :
             detail="Invalid token"
         )
     
-def get_current_user_id (box :HTTPAuthorizationCredentials = Depends(safe)):
-    token = box.credentials
+def get_current_user_id (request: Request, box: HTTPAuthorizationCredentials = Depends(safe)):
+    token = request.cookies.get("my_access_token")
+    if not token:
+        if box is None or not box.credentials:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated"
+            )
+        token = box.credentials
     payload = verify_token(token)
     user_id = payload.get("sub")
     return int(user_id)
+

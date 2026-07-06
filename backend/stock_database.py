@@ -1,6 +1,6 @@
 import psycopg2
-import connectors.models as lc
-import security as hash
+from classes import schema as lc
+from core import security as hash
 class PortfolioDB:  
     def __init__(self):
         self.conn = psycopg2.connect(

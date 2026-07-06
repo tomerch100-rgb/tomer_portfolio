@@ -1,12 +1,13 @@
-from fastapi import APIRouter ,HTTPException
+from fastapi import responses
+from fastapi import APIRouter ,HTTPException , Response
 from pydantic import BaseModel, EmailStr
 import connectors.portfolio_function as pf
-import security 
+from core import security
 
-# יוצרים את הראוטר
-router = APIRouter()
+router = APIRouter(
+    tags= ["auth"]
+)
 
-# כאן אפשר להגדיר שוב את ה-User אם צריך, או לייבא אותו
 class User_register (BaseModel):
     username: str
     password: str
@@ -23,13 +24,21 @@ def register_user(user: User_register ):
         return pf.register_user(user.username, user.password, user.email)
 
 @router.post("/login")
-def login_user(user: User_login):
+def login_user(user: User_login,response:Response):
         user_id = pf.login_user(user.username, user.password)
 
         if user_id is None :
             raise HTTPException (status_code=401, detail="wrong details")   
         access_token =  security.creat_token(user_id)
+        response.set_cookie(
+            key="my_access_token",  
+            value=access_token,     
+            httponly=True,        
+            secure=True,           
+            samesite="lax"
+        )
+
         return {
-        "access_token": access_token,
-        "token_type": "bearer"
+        "user_id": user_id,
+        "username": user.username,
     }

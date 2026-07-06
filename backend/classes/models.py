@@ -30,12 +30,3 @@ class   Portfolio (Base) :
 class Portfolio_history (Base) :
     __tablename__ = portfolio_history
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer,ForeignKey("users.user_id"))
-    total_value = Column (Float,nullable=False )
-    calculation_date = Column (Date,nullable=False )
-
-class whatchlist
-
-
-
-
