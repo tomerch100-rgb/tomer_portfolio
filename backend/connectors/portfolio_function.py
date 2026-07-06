@@ -193,6 +193,36 @@ def get_watchlist ( user_id) :
         return []
     return personal_li
 
+def get_stock_details(stock):
+    stock = stock.upper()
+    try:
+        market_cap, pe_st, expert_recommend, graf = ym.get_analysis_data(stock)
+        last_price = ym.ticker_last_price(stock)
+        prev_close = ym.ticker_previousClose(stock)
+        
+        if last_price is None and prev_close is not None:
+            last_price = prev_close
+            
+        change = 0.0
+        change_percent = 0.0
+        if last_price is not None and prev_close is not None:
+            change = last_price - prev_close
+            change_percent = (change / prev_close) * 100
+            
+        return {
+            "ticker": stock,
+            "market_cap": market_cap,
+            "pe_ratio": pe_st,
+            "recommendation": expert_recommend,
+            "current_price": last_price,
+            "previous_close": prev_close,
+            "change": change,
+            "change_percent": change_percent
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 
 
 

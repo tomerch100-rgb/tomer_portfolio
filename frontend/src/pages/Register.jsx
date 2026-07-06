@@ -1,0 +1,169 @@
+import { useForm } from "react-hook-form";
+import { useState } from "react";
+import registerCheck from "../service/registerServices";
+import { useNavigate } from "react-router-dom";
+import Btn from "../component/Btn";
+import { TrendingUp, User, Lock, Mail, Eye, EyeOff } from "lucide-react";
+
+function RegisterForm() {
+    const [show, setshow] = useState(false)
+    const showPassword = () => {
+        setshow(!show)
+    }
+    const navigate = useNavigate()
+
+    const newUser = () => {
+        navigate("/")
+    }
+
+    const { register, handleSubmit, formState: { errors } } = useForm();
+
+    const onSubmit = async (data) => {
+        console.log("הנתונים שנשלחו בהצלחה:", data);
+        try {
+            const response = await registerCheck(data)
+            console.log("הרשמה מוצלחת", response);
+            navigate('/', {
+                replace: true,
+                state: { message: "ברוך הבא למערכת!" }
+            });
+
+        } catch (error) {
+            console.error("ההרשמה נכשלה, בדוק את פרטי המשתמש.");
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center p-4 selection:bg-emerald-500/30 selection:text-emerald-400">
+            <div className="w-full max-w-md bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-8 shadow-2xl shadow-black/40">
+
+                {/* Brand Header */}
+                <div className="flex flex-col items-center mb-8">
+                    <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center mb-3 shadow-inner">
+                        <TrendingUp className="w-6 h-6 text-emerald-500" />
+                    </div>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-white">
+                        Tomer<span className="text-emerald-500">Vest</span>
+                    </h1>
+                    <p className="text-sm text-zinc-400 mt-1.5 font-medium">יצירת חשבון חדש </p>
+                </div>
+
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+
+                    {/* Username Field */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Username</label>
+                        <div className="relative">
+                            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                <User className="h-5 w-5 text-zinc-500" />
+                            </span>
+                            <input
+                                {...register("username", {
+                                    required: "username is required",
+                                    minLength: {
+                                        value: 4,
+                                        message: "username must be at least 4 characters long"
+                                    }
+                                })}
+                                type="text"
+                                placeholder="שם משתמש חדש"
+                                className="w-full pl-10 pr-4 py-3 bg-zinc-900/60 border border-zinc-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none transition-all duration-200"
+                            />
+                        </div>
+                        {errors.username && (
+                            <p className="text-xs text-rose-500 font-medium mt-1">{errors.username.message}</p>
+                        )}
+                    </div>
+                    {/* email Field */}
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Email</label>
+                        <div className="relative">
+                            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                <Mail className="h-5 w-5 text-zinc-500" />
+                            </span>
+                            <input
+                                {...register("email", {
+                                    required: "Email is required",
+                                    pattern: {
+                                        value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                                        message: "Please enter a valid email address"
+                                    }
+                                })}
+                                type="email"
+                                placeholder="כתובת אימייל"
+                                className="w-full pl-10 pr-4 py-3 bg-zinc-900/60 border border-zinc-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none transition-all duration-200"
+                            />
+                        </div>
+                        {errors.email && (
+                            <p className="text-xs text-rose-500 font-medium mt-1">{errors.email.message}</p>
+                        )}
+                    </div>
+                    
+                    {/* password Field */}
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Password</label>
+                        <div className="relative">
+                            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                <Lock className="h-5 w-5 text-zinc-500" />
+                            </span>
+                            <input
+                                {...register("password", {
+                                    required: "Password is required",
+                                    minLength: {
+                                        value: 8,
+                                        message: "Password must be at least 8 characters long"
+                                    },
+                                    validate: {
+                                        hasLettersAndNumbers: (value) =>
+                                            /^(?=.*[A-Za-z])(?=.*\d)/.test(value) ||
+                                            "Password must include both letters and numbers"
+                                    }
+                                })}
+                                type={show ? "text" : "password"}
+                                placeholder="סיסמה חזקה"
+                                className="w-full pl-10 pr-12 py-3 bg-zinc-900/60 border border-zinc-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none transition-all duration-200"
+                            />
+                            <button
+                                type="button"
+                                onClick={showPassword}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors"
+                            >
+                                {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                        </div>
+                        {errors.password && (
+                            <p className="text-xs text-rose-500 font-medium mt-1">{errors.password.message}</p>
+                        )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="pt-4 space-y-3">
+                        <Btn
+                            text="הרשמה"
+                            type="submit"
+                            design="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-emerald-950/20 cursor-pointer"
+                        />
+
+                        <div className="relative flex py-1 items-center">
+                            <div className="flex-grow border-t border-zinc-800"></div>
+                            <span className="flex-shrink mx-4 text-zinc-500 text-xs font-semibold uppercase tracking-wider">כבר יש לך חשבון?</span>
+                            <div className="flex-grow border-t border-zinc-800"></div>
+                        </div>
+
+                        <Btn
+                            text="חזרה להתחברות"
+                            onclick={newUser}
+                            type="button"
+                            design="w-full py-3 bg-zinc-800/80 hover:bg-zinc-800 text-zinc-200 hover:text-white font-medium rounded-xl transition-all duration-200 border border-zinc-700/50 cursor-pointer"
+                        />
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    );
+}
+
+export default RegisterForm;
