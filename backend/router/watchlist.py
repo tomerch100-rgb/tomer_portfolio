@@ -1,7 +1,9 @@
 from fastapi import APIRouter,Depends
 import connectors.portfolio_function as pf
-import security
-router = APIRouter()
+from core import security
+router = APIRouter(
+    tags= ["watchlist"]
+)
 
 
 

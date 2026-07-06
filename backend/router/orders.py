@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends
-import security
+from core import security 
 from pydantic import BaseModel
 import connectors.portfolio_function as pf
-router = APIRouter()
+router = APIRouter(
+
+    tags= ["orders"]
+)
 
 class Stock_info (BaseModel):
     stock : str

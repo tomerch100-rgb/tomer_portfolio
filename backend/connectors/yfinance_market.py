@@ -3,7 +3,7 @@ import connectors.stock_cache as cache
 
 def ticker_previousClose(stock):
     stock = stock.upper()
-    cached_data = cache.get_stock_data(stock) # מפתח רגיל ל-fast_info
+    cached_data = cache.get_stock_data(stock) 
     if cached_data is not None:
         return cached_data.get("previousClose")
     
@@ -17,7 +17,7 @@ def ticker_previousClose(stock):
 
 def ticker_last_price(stock):
     stock = stock.upper()
-    cached_data = cache.get_stock_data(stock) # מפתח רגיל ל-fast_info
+    cached_data = cache.get_stock_data(stock) 
     if cached_data is not None:
         return cached_data.get("lastPrice")
 
@@ -31,11 +31,10 @@ def ticker_last_price(stock):
 
 def get_analysis_data(stock):
     stock = stock.upper()
-    cache_key = f"{stock}_ANALYSIS" # מפתח נפרד! שלא יתערבב עם המחירים
+    cache_key = f"{stock}_ANALYSIS"
     
     cached_data = cache.get_stock_data(cache_key)
     if cached_data is not None:
-        # כאן הכל נשלף בצורה מושלמת מהמילון המותאם ששמרנו
         return (cached_data.get("marketCap"),
                 cached_data.get("trailingPE"),
                 cached_data.get("recommendationKey"),

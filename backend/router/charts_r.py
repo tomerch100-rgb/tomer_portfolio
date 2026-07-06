@@ -1,8 +1,10 @@
 from fastapi import APIRouter,Depends 
 import connectors.portfolio_function as pf
-import security
+from core import security
 
-router = APIRouter()
+router = APIRouter(
+    tags= ["charts"]
+)
 
 @router.get("/portfolio_history")
 def portfolio_history(user_id : int = Depends (security.get_current_user_id)):
