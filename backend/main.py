@@ -18,7 +18,7 @@ app.add_middleware(
 
 app.include_router(auth.router , prefix= "/auth")
 app.include_router(orders.router , prefix= "/orders")
-app.include_router(disiply.router , prefix= "/dry_disiply")
+app.include_router(disiply.router , prefix= "/disiply")
 app.include_router(analysis.router )
 app.include_router(charts_r.router, prefix= "/charts")
 app.include_router(home_page.router , prefix= "/home")

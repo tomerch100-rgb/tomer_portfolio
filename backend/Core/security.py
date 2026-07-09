@@ -9,13 +9,11 @@ from dotenv import load_dotenv
 load_dotenv()
 safe = HTTPBearer(auto_error=False)
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key_12345")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
-def hash_password (password)  :# 1. כשמשתמש נרשם (מייצרים Hash)
-# צריך להפוך את הסיסמה ל-bytes
+def hash_password (password)  :
     bytes_password = password.encode('utf-8')
-# יוצרים salt ומצפינים
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(bytes_password, salt)
     return hashed.decode()
@@ -62,5 +60,10 @@ def get_current_user_id (request: Request, box: HTTPAuthorizationCredentials = D
         token = box.credentials
     payload = verify_token(token)
     user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid token"
+    )
     return int(user_id)
 

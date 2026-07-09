@@ -12,3 +12,27 @@ export const disiplyPortfolio = async () => {
 };
 
 
+
+export const portfolio_summary = async () => {
+    try {
+        const response = await api.get('/disiply/portfolio_summary');
+        return response.data
+    } catch (error) {
+        console.error("  שגיאה בהבאת נתונים:", error);
+        throw error;
+    }
+};
+
+
+export const transaction_log = async () => {
+    try {
+        const response = await api.get('/disiply/transaction_log');
+        return response.data
+    } catch (error) {
+        console.error("  שגיאה בהבאת נתונים:", error);
+        throw error;
+    }
+};
+
+
+

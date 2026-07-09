@@ -1,3 +1,4 @@
+
 from fastapi import responses
 from fastapi import APIRouter ,HTTPException , Response
 from pydantic import BaseModel, EmailStr
@@ -34,7 +35,7 @@ def login_user(user: User_login,response:Response):
             key="my_access_token",  
             value=access_token,     
             httponly=True,        
-            secure=True,           
+            secure=False,           
             samesite="lax"
         )
 

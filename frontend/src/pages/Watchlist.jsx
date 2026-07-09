@@ -8,10 +8,8 @@ function Watchlist() {
     const { ticker } = useParams();
     const navigate = useNavigate();
 
-    // 1. משיכת רשימת המעקב בצורה נקייה - בלי useState כפול!
     const { data: watchlistData = [], isLoading: isListLoading, refetch } = useFetchData(showList);
 
-    // 2. משיכת נתוני המניה הספציפית בעזרת ה-Hook (מותנה בכך שיש ticker)
     const { data: stockDetails, isLoading: isDetailsLoading, error: detailsError } =
         useFetchData(() => ticker ? getStockDetails(ticker) : null, [ticker]);
 
@@ -19,7 +17,6 @@ function Watchlist() {
     const [isAdding, setIsAdding] = useState(false);
     const [addFeedback, setAddFeedback] = useState("");
 
-    // ניווט אוטומטי למניה הראשונה ברשימה אם המשתמש לא בחר מניה ספציפית
     useEffect(() => {
         if (!ticker && watchlistData.length > 0) {
             navigate(`/watchlist/${watchlistData[0]}`);
@@ -39,7 +36,7 @@ function Watchlist() {
             if (res === "success") {
                 setAddFeedback("המניה נוספה בהצלחה!");
                 setSearchTicker("");
-                refetch(); // מרענן את הרשימה מהשרת אוטומטית
+                refetch(); 
                 navigate(`/watchlist/${targetTicker}`);
             } else {
                 setAddFeedback(res || "שגיאה בהוספת מניה");
