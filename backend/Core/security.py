@@ -12,7 +12,7 @@ safe = HTTPBearer(auto_error=False)
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
-def hash_password (password)  :# 1. כשמשתמש נרשם (מייצרים Hash)
+def hash_password (password)  :
 # צריך להפוך את הסיסמה ל-bytes
     bytes_password = password.encode('utf-8')
 # יוצרים salt ומצפינים

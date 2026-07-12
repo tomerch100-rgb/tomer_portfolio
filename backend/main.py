@@ -2,6 +2,7 @@ from router import auth , orders ,disiply,analysis,charts_r,home_page,watchlist
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware # הוספת הייבוא הזה
 from fastapi import FastAPI
+
 app = FastAPI()
 
 origins = [

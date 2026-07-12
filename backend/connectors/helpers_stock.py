@@ -1,20 +1,19 @@
 import connectors.yfinance_market as ym
-import stock_database as db 
-pdb = db.PortfolioDB() 
+from sqlalchemy.orm import Session
+from classes import crud
 
+def sum_pl(db: Session, user_id: int):
+    # it inside the show function it knows how much profit you made
+    pl_val = crud.get_transactions_sum_realized_pl(db, user_id)
+    if pl_val == 0.0:
+        # Check if there are actually any transactions at all, if not return legacy string
+        txs = crud.get_transactions_history(db, user_id)
+        if not txs:
+            return "you dont have any profit or loss"
+    return float(pl_val)
 
-def sum_pl (user_id):
-    #it inside the show sunction it know
-    #  how much profit you made
-    pl_sum = pdb.total_profit_loss(user_id)
-    if pl_sum is None or pl_sum[0] is None:
-        return "you dont have any profit or loss"
-    else:
-        return float(pl_sum[0])
-    
-
-def update_prices(ticker, shares, avg_price):
-    #from here you take for the other function the live status
+def update_prices(ticker: str, shares: float, avg_price: float):
+    # from here you take for the other function the live status
     shares = float(shares)
     avg_price = float(avg_price)
     worth_st = shares * avg_price
@@ -29,9 +28,9 @@ def update_prices(ticker, shares, avg_price):
         previous_close = prev_close_val
     stock_currnet_worth = current_price * shares
     prolos = stock_currnet_worth - worth_st
-    precent_f_buy = (prolos / worth_st) * 100
+    precent_f_buy = (prolos / worth_st) * 100 if worth_st != 0 else 0.0
     daily_change = (current_price - previous_close) * shares
-    daily_precent = ((current_price - previous_close) / previous_close) * 100
+    daily_precent = ((current_price - previous_close) / previous_close) * 100 if previous_close != 0 else 0.0
 
     info = {
         "currnet_price": current_price,
@@ -43,11 +42,10 @@ def update_prices(ticker, shares, avg_price):
     }
     return info    
 
-
-def sum_daily_change (user_id) :
-    info_st = pdb.select_all(user_id)
+def sum_daily_change(db: Session, user_id: int) -> float:
+    info_st = crud.get_portfolio_all(db, user_id)
     daily_change = []
     for stock in info_st :
-        info=update_prices(stock.ticker,stock.shares,stock.avg_price)
+        info = update_prices(stock.ticker, stock.shares, stock.avg_price)
         daily_change.append(info["day_change"])
-    return sum (daily_change)
+    return sum(daily_change)
