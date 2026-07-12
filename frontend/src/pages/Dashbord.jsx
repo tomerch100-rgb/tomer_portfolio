@@ -22,6 +22,9 @@ function Dashbord() {
   const { data: portfolioDisiplay, isLoading: disiplyLoading, error: disiplyError } = useFetchData(disiplyPortfolio);
   const { data: summaryPortfolio, isLoading: summaryLoading, error: summaryError } = useFetchData(portfolio_summary);
   const { data: transaction, isLoading: transactionLoading, error: transactionError } = useFetchData(transaction_log);
+
+  const isLoading = disiplyLoading || summaryLoading || transactionLoading;
+  const hasError = disiplyError || summaryError || transactionError;
   // Helper to format currency
   const formatCurrency = (val) => {
     const num = Number(val);

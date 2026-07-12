@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import registerCheck from "../service/registerServices";
+import { registerCheck } from "../service/authService";
 import { useNavigate } from "react-router-dom";
 import Btn from "../component/Btn";
 import { TrendingUp, User, Lock, Mail, Eye, EyeOff } from "lucide-react";
@@ -99,7 +99,7 @@ function RegisterForm() {
                             <p className="text-xs text-rose-500 font-medium mt-1">{errors.email.message}</p>
                         )}
                     </div>
-                    
+
                     {/* password Field */}
 
                     <div className="space-y-1.5">
