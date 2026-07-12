@@ -2,7 +2,7 @@ import connectors.yfinance_market as ym
 import connectors.helpers_stock as hp
 import connectors.stock_charts as sc
 from sqlalchemy.orm import Session
-from classes import crud, schema as lc
+from classes import CRUD as crud, schema as lc
 from core import security
 
 def get_me(db: Session, user_id: int):

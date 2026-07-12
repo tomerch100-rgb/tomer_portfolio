@@ -1,6 +1,6 @@
 import connectors.yfinance_market as ym
 from sqlalchemy.orm import Session
-from classes import crud
+from classes import CRUD as crud
 
 def sum_pl(db: Session, user_id: int):
     # it inside the show function it knows how much profit you made
