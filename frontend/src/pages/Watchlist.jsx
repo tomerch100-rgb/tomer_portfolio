@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { addTolist, showList, getStockDetails } from "../service/watchlistService";
+import { addTolist, showList, getStockDetails } from "../services/watchlistService";
 import useFetchData from "../hooks/useFetchData";
 import { Search, Plus, TrendingUp, TrendingDown, DollarSign, Activity, BarChart2, Loader2, Star } from "lucide-react";
 

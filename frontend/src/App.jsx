@@ -1,8 +1,8 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import NotFound from "./pages/NotFound"
 import LoginForm from "./pages/LoginPage";
-import ProtectedLayout from "./component/ProtectedLayout";
-import Dashbord from "./pages/dashbord";
+import ProtectedLayout from "./components/ProtectedLayout";
+import Dashbord from "./pages/Dashbord";
 import Orders from "./pages/Orders";
 import Watchlist from "./pages/Watchlist";
 import RegisterForm from "./pages/Register";
@@ -11,7 +11,7 @@ import Home from "./pages/Home";
 
 import { useEffect } from "react"
 import { useDispatch } from "react-redux"
-import { checkAuth } from "./service/authService"
+import { checkAuth } from "./services/authService"
 import { loginSuccess, verificationCompleted } from "./store/authSlice"
 
 const router = createBrowserRouter([

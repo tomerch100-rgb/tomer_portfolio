@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { displayPortfolio, portfolio_summary, transaction_log } from "../service/dashbordService";
+import { displayPortfolio, portfolio_summary, transaction_log } from "../services/dashbordService";
 import useFetchData from "../hooks/useFetchData";
 import {
   TrendingUp,

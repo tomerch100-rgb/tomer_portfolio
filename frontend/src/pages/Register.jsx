@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import { registerCheck } from "../service/authService";
+import { registerCheck } from "../services/authService";
 import { useNavigate } from "react-router-dom";
-import Btn from "../component/Btn";
+import Btn from "../components/Btn";
 import { TrendingUp, User, Lock, Mail, Eye, EyeOff } from "lucide-react";
 
 function RegisterForm() {

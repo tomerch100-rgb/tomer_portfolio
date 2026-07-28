@@ -1,4 +1,4 @@
-from router import auth , orders ,display,analysis,charts_r,home_page,watchlist
+from app.api.routers import auth , orders ,display,analysis,charts_r,home_page,watchlist
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware 
 from fastapi import FastAPI
@@ -33,8 +33,8 @@ if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
 
 
-from db.database import engine  
-from classes import models   
+from app.db.session import engine  
+import app.models
+from app.db.base_class import Base
 
-
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)

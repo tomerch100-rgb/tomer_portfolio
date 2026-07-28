@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { addStock, sellStock } from "../service/ordersService";
+import { addStock, sellStock } from "../services/ordersService";
 
 function Orders() {
     const { register, handleSubmit, formState: { errors }, reset } = useForm();
