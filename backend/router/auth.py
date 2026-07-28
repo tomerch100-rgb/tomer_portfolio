@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException, Response, Depends
+from fastapi import APIRouter, HTTPException, Response, Depends,status
 from sqlalchemy.orm import Session
 from classes import schema as lc
 from db.database import get_db
-import connectors.portfolio_function as pf
+import services.portfolio_function as pf
 from core import security
 
 router = APIRouter(
-    tags=["auth"]
+  prefix="/auth", tags=["auth"]
+
 )
+COOKIE_NAME = "my_access_token"
 
 @router.post("/register")
 def register_user(user: lc.User_register, db: Session = Depends(get_db)):
@@ -25,7 +27,7 @@ def login_user(user: lc.User_login, response: Response, db: Session = Depends(ge
         key="my_access_token",  
         value=access_token,     
         httponly=True,        
-        secure=True,           
+        secure=False,           
         samesite="lax"
     )
 
@@ -33,3 +35,26 @@ def login_user(user: lc.User_login, response: Response, db: Session = Depends(ge
         "user_id": user_id,
         "username": user.username,
     }
+
+
+    
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(response: Response):
+    """
+    Clear the auth cookie and end the session.
+    """
+    response.delete_cookie(
+        key=COOKIE_NAME,
+        httponly=True,
+        samesite="none",  # Здесь тоже меняем, иначе кука не удалится при выходе
+        secure=True,
+    )
+    return {"message": "Logged out successfully"}
+
+@router.get("/me")
+def get_me(db: Session = Depends(get_db), current_user_id: int = Depends(security.get_current_user_id)):
+    user_info = pf.get_me(db, current_user_id)
+    if not user_info:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user_info
+

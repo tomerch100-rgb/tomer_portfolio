@@ -1,21 +1,18 @@
 import api from "./api";
 
-
-export const disiplyPortfolio = async () => {
+export const displayPortfolio = async () => {
     try {
-        const response = await api.get('/disiply/show_portfolio');
+        const response = await api.get('/display/show_portfolio');
         return response.data
     } catch (error) {
         console.error("  שגיאה בהבאת נתונים:", error);
         throw error;
     }
 };
-
-
 
 export const portfolio_summary = async () => {
     try {
-        const response = await api.get('/disiply/portfolio_summary');
+        const response = await api.get('/display/portfolio_summary');
         return response.data
     } catch (error) {
         console.error("  שגיאה בהבאת נתונים:", error);
@@ -23,10 +20,9 @@ export const portfolio_summary = async () => {
     }
 };
 
-
 export const transaction_log = async () => {
     try {
-        const response = await api.get('/disiply/transaction_log');
+        const response = await api.get('/display/transaction_log');
         return response.data
     } catch (error) {
         console.error("  שגיאה בהבאת נתונים:", error);

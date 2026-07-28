@@ -58,5 +58,5 @@ websockets==16.0
 yfinance==1.4.1
 
 
-pip install -r requirements.txt
-python3 -m pip freeze > requirements.txt
+# pip install -r requirements.txt
+# python3 -m pip freeze > requirements.txt

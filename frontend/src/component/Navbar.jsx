@@ -3,19 +3,26 @@ import Btn from "./Btn";
 import { logout } from "../store/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { TrendingUp, LogOut } from "lucide-react";
+import { logout as logoutApi} from "../service/authService";
 
 function Navbar() {
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const user = useSelector((state) => state.auth.user)
 
-    const exit = () => {
-        dispatch(logout())
+    const exit = async () => {
+    try {
+        await logoutApi(); 
+        dispatch(logout());
         navigate('/', {
             replace: true,
             state: { message: "ביי ביי תודה" }
-        })
+        });
+
+    } catch (error) {
+        console.error("שגיאה בהתנתקות מול השרת:", error);
     }
+};
 
     const navLinkClass = ({ isActive }) =>
         `px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${isActive

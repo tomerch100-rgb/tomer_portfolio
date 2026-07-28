@@ -1,4 +1,4 @@
-import connectors.yfinance_market as ym
+import services.yfinance_market as ym
 from sqlalchemy.orm import Session
 from classes import CRUD as crud
 

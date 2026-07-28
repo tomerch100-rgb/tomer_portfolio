@@ -8,7 +8,6 @@ const NotFound = () => {
                 <AlertCircle size={48} />
             </div>
 
-            {/* טקסט מרכזי */}
             <h1 className="text-9xl font-black text-gray-200 tracking-widest select-none">
                 404
             </h1>

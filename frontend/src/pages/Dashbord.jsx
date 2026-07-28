@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { disiplyPortfolio, portfolio_summary, transaction_log } from "../service/dashbordService";
+import { displayPortfolio, portfolio_summary, transaction_log } from "../service/dashbordService";
 import useFetchData from "../hooks/useFetchData";
 import {
   TrendingUp,
@@ -19,12 +19,12 @@ function Dashbord() {
   const user = useSelector((state) => state.auth.user);
 
   // Data fetching using useFetchData hook
-  const { data: portfolioDisiplay, isLoading: disiplyLoading, error: disiplyError } = useFetchData(disiplyPortfolio);
+  const { data: portfolioDisplay, isLoading: displayLoading, error: displayError } = useFetchData(displayPortfolio);
   const { data: summaryPortfolio, isLoading: summaryLoading, error: summaryError } = useFetchData(portfolio_summary);
   const { data: transaction, isLoading: transactionLoading, error: transactionError } = useFetchData(transaction_log);
 
-  const isLoading = disiplyLoading || summaryLoading || transactionLoading;
-  const hasError = disiplyError || summaryError || transactionError;
+  const isLoading = displayLoading || summaryLoading || transactionLoading;
+  const hasError = displayError || summaryError || transactionError;
   // Helper to format currency
   const formatCurrency = (val) => {
     const num = Number(val);
@@ -159,7 +159,7 @@ function Dashbord() {
               </div>
             </div>
             <div className="overflow-x-auto">
-              {!Array.isArray(portfolioDisiplay) || portfolioDisiplay.length === 0 ? (
+              {!Array.isArray(portfolioDisplay) || portfolioDisplay.length === 0 ? (
                 <div className="text-center py-16 px-4">
                   <Briefcase className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
                   <h3 className="font-semibold text-zinc-300 text-sm">No assets in portfolio</h3>
@@ -179,7 +179,7 @@ function Dashbord() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/50 text-sm">
-                    {portfolioDisiplay.map((stock, index) => {
+                    {portfolioDisplay.map((stock, index) => {
                       const isPlPositive = Number(stock["p/l"]) >= 0;
                       const isDayPositive = Number(stock.day_change) >= 0;
                       return (

@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from core import security 
 from classes import schema as lc
 from db.database import get_db
-import connectors.portfolio_function as pf
+import services.portfolio_function as pf
 
 router = APIRouter(
-    tags=["orders"]
+    tags=["orders"]  , prefix= "/orders"
 )
 
 @router.post("/add_stock")

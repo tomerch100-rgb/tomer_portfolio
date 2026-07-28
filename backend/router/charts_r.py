@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends 
 from sqlalchemy.orm import Session
 from db.database import get_db
-import connectors.portfolio_function as pf
+import services.portfolio_function as pf
 from core import security
 
 router = APIRouter(
-    tags=["charts"]
+    tags=["charts"] , prefix= "/charts"
 )
 
 @router.get("/portfolio_history")

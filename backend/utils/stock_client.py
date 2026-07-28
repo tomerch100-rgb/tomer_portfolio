@@ -28,7 +28,7 @@ def run_full_flow():
     print(f"4. Watchlist: {wl.status_code} | {wl.json()}")
 
     # 5. הצגת תיק
-    port = requests.get(f"{BASE_URL}/dry_disiply/show_portfolio", headers=headers)
+    port = requests.get(f"{BASE_URL}/display/show_portfolio", headers=headers)
     print(f"5. Portfolio: {port.status_code} | {port.json()}")
 
 if __name__ == "__main__":

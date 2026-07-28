@@ -1,6 +1,6 @@
-import connectors.yfinance_market as ym
-import connectors.helpers_stock as hp
-import connectors.stock_charts as sc
+import services.yfinance_market as ym
+import services.helpers_stock as hp
+import services.stock_charts as sc
 from sqlalchemy.orm import Session
 from classes import CRUD as crud, schema as lc
 from core import security
@@ -135,7 +135,7 @@ def show_portfolio(db: Session, user_id: int):
     # here you show all the stocks and you get live action also
     rows = crud.get_portfolio_all(db, user_id)
     if not rows:
-        return "No stocks found"
+        return []
     all_li = []
     for row in rows:
         worth_st = float(row.shares) * float(row.avg_price)  # שווי הקנייה המקורי

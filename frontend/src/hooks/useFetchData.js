@@ -13,15 +13,18 @@ function useFetchData(apiFunction, dependencies = []) {
             try {
                 const data = await apiFunction()
                 setData(data)
-                setIsLoading(false)
             } catch (error) {
                 console.error("לא הצלחנו למשוך את התיק", error)
                 setError(error.message || "משהו השתבש בטעינת הנתונים");
-                setIsLoading(false);
+            }
+            finally {
+                 setIsLoading(false)
+
+
             }
         }
         fetchMyData();
-    }, [apiFunction])
+    }, [...dependencies])
     return { data, isLoading, error }
 
 }

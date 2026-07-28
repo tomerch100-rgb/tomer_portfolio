@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-import connectors.portfolio_function as pf
+import services.portfolio_function as pf
 router = APIRouter(
     tags= ["analysis"]
 )

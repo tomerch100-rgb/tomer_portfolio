@@ -3,11 +3,16 @@ import NotFound from "./pages/NotFound"
 import LoginForm from "./pages/LoginPage";
 import ProtectedLayout from "./component/ProtectedLayout";
 import Dashbord from "./pages/dashbord";
-import Orders from "./pages/orders";
+import Orders from "./pages/Orders";
 import Watchlist from "./pages/Watchlist";
 import RegisterForm from "./pages/Register";
 import Home from "./pages/Home";
 
+
+import { useEffect } from "react"
+import { useDispatch } from "react-redux"
+import { checkAuth } from "./service/authService"
+import { loginSuccess, verificationCompleted } from "./store/authSlice"
 
 const router = createBrowserRouter([
   {
@@ -35,6 +40,19 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
+  const dispatch = useDispatch()
+
+  useEffect(() => {
+    const verifyUser = async () => {
+      try {
+        const userData = await checkAuth()
+        dispatch(loginSuccess(userData))
+      } catch (error) {
+        dispatch(verificationCompleted())
+      }
+    }
+    verifyUser()
+  }, [dispatch])
 
   return <RouterProvider router={router} />
 
