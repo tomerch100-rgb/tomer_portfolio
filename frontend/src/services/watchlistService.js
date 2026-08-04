@@ -24,7 +24,7 @@ export const showList = async () => {
 
 export const getStockDetails = async (ticker) => {
     try {
-        const response = await api.get(`/stock_details?spec_stock=${ticker}`);
+        const response = await api.get(`/analysis/stock_details?spec_stock=${ticker}`);
         return response.data;
     } catch (error) {
         console.error("שגיאה בהבאת פרטי מניה:", error);

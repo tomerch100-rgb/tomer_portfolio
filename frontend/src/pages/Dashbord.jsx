@@ -1,12 +1,11 @@
-import { useSelector } from "react-redux";
-import { displayPortfolio, portfolio_summary, transaction_log } from "../services/dashbordService";
+import { useSelector } from 'react-redux';
+import { displayPortfolio, portfolio_summary } from "../services/dashbordService";
 import useFetchData from "../hooks/useFetchData";
 import {
   TrendingUp,
   TrendingDown,
   DollarSign,
   Briefcase,
-  History,
   Activity,
   ArrowUpRight,
   ArrowDownRight,
@@ -15,28 +14,29 @@ import {
 } from "lucide-react";
 
 function Dashbord() {
-
   const user = useSelector((state) => state.auth.user);
 
   // Data fetching using useFetchData hook
   const { data: portfolioDisplay, isLoading: displayLoading, error: displayError } = useFetchData(displayPortfolio);
   const { data: summaryPortfolio, isLoading: summaryLoading, error: summaryError } = useFetchData(portfolio_summary);
-  const { data: transaction, isLoading: transactionLoading, error: transactionError } = useFetchData(transaction_log);
 
-  const isLoading = displayLoading || summaryLoading || transactionLoading;
-  const hasError = displayError || summaryError || transactionError;
+  const isLoading = displayLoading || summaryLoading;
+  const hasError = displayError || summaryError;
+
   // Helper to format currency
   const formatCurrency = (val) => {
     const num = Number(val);
     if (isNaN(num)) return "$0.00";
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
   };
+
   // Helper to format percent
   const formatPercent = (val) => {
     const num = Number(val);
     if (isNaN(num)) return "0.00%";
     return `${num >= 0 ? "+" : ""}${num.toFixed(2)}%`;
   };
+
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 font-sans p-4 sm:p-6 lg:p-8">
       {/* Header */}
@@ -54,6 +54,7 @@ function Dashbord() {
           Live Feed Active
         </div>
       </div>
+
       {isLoading ? (
         <div className="max-w-7xl mx-auto flex flex-col items-center justify-center py-20 gap-4">
           <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
@@ -86,6 +87,7 @@ function Dashbord() {
               </h3>
               <p className="text-xs text-zinc-500 mt-2">Current account balance</p>
             </div>
+
             {/* Total Profit/Loss */}
             <div className="bg-[#121214] border border-zinc-800/80 rounded-2xl p-6 hover:border-zinc-700/80 transition-all duration-300 shadow-lg">
               {(() => {
@@ -111,6 +113,7 @@ function Dashbord() {
                 );
               })()}
             </div>
+
             {/* Daily Change */}
             <div className="bg-[#121214] border border-zinc-800/80 rounded-2xl p-6 hover:border-zinc-700/80 transition-all duration-300 shadow-lg">
               {(() => {
@@ -136,6 +139,7 @@ function Dashbord() {
                 );
               })()}
             </div>
+
             {/* Active Positions */}
             <div className="bg-[#121214] border border-zinc-800/80 rounded-2xl p-6 hover:border-zinc-700/80 transition-all duration-300 shadow-lg">
               <div className="flex items-center justify-between text-zinc-400 mb-4">
@@ -150,7 +154,8 @@ function Dashbord() {
               <p className="text-xs text-zinc-500 mt-2">Active asset holdings</p>
             </div>
           </div>
-          {/* Portfolio Table */}
+
+          {/* Active Holdings Table */}
           <div className="bg-[#121214] border border-zinc-800/80 rounded-3xl overflow-hidden shadow-xl">
             <div className="px-6 py-5 border-b border-zinc-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
@@ -224,75 +229,10 @@ function Dashbord() {
               )}
             </div>
           </div>
-          {/* Transactions Log */}
-          <div className="bg-[#121214] border border-zinc-800/80 rounded-3xl overflow-hidden shadow-xl">
-            <div className="px-6 py-5 border-b border-zinc-800/80 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <History className="w-5 h-5 text-emerald-500" />
-                <h2 className="text-lg font-bold text-white">Recent Transactions</h2>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              {!Array.isArray(transaction) || transaction.length === 0 ? (
-                <div className="text-center py-12 px-4">
-                  <p className="text-zinc-500 text-xs">No recent transactions recorded.</p>
-                </div>
-              ) : (
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-zinc-800 text-zinc-400 text-xs font-semibold tracking-wider uppercase bg-zinc-900/30">
-                      <th className="py-4 px-6">Date</th>
-                      <th className="py-4 px-6">Ticker</th>
-                      <th className="py-4 px-6">Type</th>
-                      <th className="py-4 px-6 text-right">Shares</th>
-                      <th className="py-4 px-6 text-right">Price</th>
-                      <th className="py-4 px-6 text-right">Realized P/L</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/50 text-sm">
-                    {transaction.map((tx, index) => {
-                      const isBuy = tx.action_type === "BUY";
-                      const isRealizedPositive = Number(tx.realized_pl) >= 0;
-                      return (
-                        <tr
-                          key={index}
-                          className="hover:bg-zinc-800/10 transition-colors duration-150"
-                        >
-                          <td className="py-4 px-6 text-zinc-400 text-xs font-mono">
-                            {tx.transaction_date}
-                          </td>
-                          <td className="py-4 px-6 font-semibold text-white">
-                            {tx.ticker}
-                          </td>
-                          <td className="py-4 px-6">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium uppercase ${isBuy ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
-                              }`}>
-                              {tx.action_type}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 text-right text-zinc-300 font-mono">
-                            {tx.shares}
-                          </td>
-                          <td className="py-4 px-6 text-right text-zinc-400 font-mono">
-                            {formatCurrency(tx.price)}
-                          </td>
-                          <td className={`py-4 px-6 text-right font-mono font-medium ${tx.realized_pl !== 0
-                            ? isRealizedPositive ? "text-emerald-400" : "text-rose-400"
-                            : "text-zinc-500"
-                            }`}>
-                            {tx.realized_pl !== 0 ? formatCurrency(tx.realized_pl) : "-"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
         </div>
       )}
     </div>
   );
 }
+
 export default Dashbord;

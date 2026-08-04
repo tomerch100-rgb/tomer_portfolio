@@ -31,4 +31,27 @@ export const transaction_log = async () => {
 };
 
 
+export const updatePositionAnalysis = async (ticker, risk_level, take_profit, stop_loss) => {
+    try {
+        const response = await api.patch('/display/update_position', {
+            ticker,
+            risk_level,
+            take_profit,
+            stop_loss
+        });
+        return response.data;
+    } catch (error) {
+        console.error("שגיאה בעדכון הפוזיציה:", error);
+        throw error;
+    }
+};
 
+export const getPortfolioHistory = async () => {
+    try {
+        const response = await api.get('/charts/portfolio_history');
+        return response.data;
+    } catch (error) {
+        console.error("שגיאה בהבאת נתונים:", error);
+        throw error;
+    }
+};

@@ -2,9 +2,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.db.base_class import Base
 
-SQLALCHEMY_DATABASE_URL = "postgresql://neondb_owner:npg_tgsW5mfSE3PK@ep-billowing-fire-atrzefwi-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+import os
+from dotenv import load_dotenv, find_dotenv
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+load_dotenv(find_dotenv())
+
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=1800,
+    pool_timeout=30
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Import models here to register them with Base metadata before calling create_all

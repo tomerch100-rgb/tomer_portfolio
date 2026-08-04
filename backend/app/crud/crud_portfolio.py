@@ -35,6 +35,16 @@ class CRUDPortfolio:
             db.refresh(db_portfolio)
         return db_portfolio
 
+    def update_position_analysis(self, db: Session, user_id: int, ticker: str, risk_level: str, take_profit: float, stop_loss: float) -> Portfolio:
+        db_portfolio = self.get_portfolio_stock(db, user_id, ticker)
+        if db_portfolio:
+            db_portfolio.risk_level = risk_level
+            db_portfolio.take_profit = take_profit
+            db_portfolio.stop_loss = stop_loss
+            db.commit()
+            db.refresh(db_portfolio)
+        return db_portfolio
+
     def delete_portfolio_stock(self, db: Session, user_id: int, ticker: str) -> bool:
         db_portfolio = self.get_portfolio_stock(db, user_id, ticker)
         if db_portfolio:

@@ -5,9 +5,9 @@ router = APIRouter(
 )
 
 @router.get ("/stock_analysis")
-def stock_analysis (spec_stock : str) :
-    return pf.stock_analysis (spec_stock)
+async def stock_analysis (spec_stock : str) :
+    return await pf.stock_analysis (spec_stock)
 
 @router.get ("/stock_details")
-def stock_details (spec_stock : str) :
-    return pf.get_stock_details (spec_stock)
+async def stock_details (spec_stock : str) :
+    return await pf.get_stock_details (spec_stock)

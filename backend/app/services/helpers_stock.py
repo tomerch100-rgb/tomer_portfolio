@@ -1,29 +1,29 @@
-import app.services.yfinance_market as ym
+from app.services.stock_service import get_prices_from_alpaca
 from sqlalchemy.orm import Session
-from app.crud import crud_transaction as crud
+from app.crud import crud_transaction, crud_portfolio
 
 def sum_pl(db: Session, user_id: int):
     # it inside the show function it knows how much profit you made
-    pl_val = crud.get_transactions_sum_realized_pl(db, user_id)
+    pl_val = crud_transaction.get_transactions_sum_realized_pl(db, user_id)
     if pl_val == 0.0:
         # Check if there are actually any transactions at all, if not return legacy string
-        txs = crud.get_transactions_history(db, user_id)
+        txs = crud_transaction.get_transactions_history(db, user_id)
         if not txs:
             return "you dont have any profit or loss"
     return float(pl_val)
 
-def update_prices(ticker: str, shares: float, avg_price: float):
+async def update_prices(ticker: str, shares: float, avg_price: float):
     # from here you take for the other function the live status
     shares = float(shares)
     avg_price = float(avg_price)
     worth_st = shares * avg_price
-    prev_close_val = ym.ticker_previousClose(ticker)
-    if prev_close_val is None :
-        current_price = avg_price  # נניח שהמחיר לא השתנה כדי לא לשבור את החישוב
+    prices = await get_prices_from_alpaca(ticker)
+    if prices is None or prices.get("previousClose") is None:
+        current_price = avg_price  # Default if unchanged
         previous_close = avg_price
-    else :
-        live_price = ym.ticker_last_price(ticker)
-        # חגורת בטיחות: אם המחיר חזר ריק (None), נשתמש במחיר הסגירה הקודם כדי לא להתרסק
+    else:
+        prev_close_val = prices["previousClose"]
+        live_price = prices.get("lastPrice")
         current_price = live_price if live_price is not None else prev_close_val
         previous_close = prev_close_val
     stock_currnet_worth = current_price * shares
@@ -42,10 +42,10 @@ def update_prices(ticker: str, shares: float, avg_price: float):
     }
     return info    
 
-def sum_daily_change(db: Session, user_id: int) -> float:
-    info_st = crud.get_portfolio_all(db, user_id)
+async def sum_daily_change(db: Session, user_id: int) -> float:
+    info_st = crud_portfolio.get_portfolio_all(db, user_id)
     daily_change = []
     for stock in info_st :
-        info = update_prices(stock.ticker, stock.shares, stock.avg_price)
+        info = await update_prices(stock.ticker, stock.shares, stock.avg_price)
         daily_change.append(info["day_change"])
     return sum(daily_change)

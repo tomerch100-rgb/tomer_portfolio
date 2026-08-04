@@ -7,7 +7,11 @@ import Orders from "./pages/Orders";
 import Watchlist from "./pages/Watchlist";
 import RegisterForm from "./pages/Register";
 import Home from "./pages/Home";
+import StockPage from "./pages/Chart";
+import TransactionHistory from "./pages/TransactionHistory";
 
+import DeepPortfolioAnalysis from "./pages/DeepPortfolioAnalysis";
+import PortfolioAnalytics from "./pages/PortfolioAnalytics";
 
 import { useEffect } from "react"
 import { useDispatch } from "react-redux"
@@ -33,8 +37,13 @@ const router = createBrowserRouter([
 
     children: [
       { path: "/dashbord", element: <Dashbord /> },
+      { path: "/deep-analysis", element: <DeepPortfolioAnalysis /> },
+      { path: "/analytics", element: <PortfolioAnalytics /> },
       { path: "/orders", element: <Orders /> },
-      { path: "/watchlist/:ticker", element: <Watchlist /> }
+      { path: "/history", element: <TransactionHistory /> },
+      { path: "/watchlist/:ticker", element: <Watchlist /> },
+      { path: "/charts", element: <StockPage /> },
+      { path: "/charts/:ticker", element: <StockPage /> }
     ],
   },
 ]);

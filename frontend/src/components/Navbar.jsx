@@ -3,7 +3,7 @@ import Btn from "./Btn";
 import { logout } from "../store/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { TrendingUp, LogOut } from "lucide-react";
-import { logout as logoutApi} from "../services/authService";
+import { logout as logoutApi } from "../services/authService";
 
 function Navbar() {
     const dispatch = useDispatch()
@@ -11,18 +11,18 @@ function Navbar() {
     const user = useSelector((state) => state.auth.user)
 
     const exit = async () => {
-    try {
-        await logoutApi(); 
-        dispatch(logout());
-        navigate('/', {
-            replace: true,
-            state: { message: "ביי ביי תודה" }
-        });
+        try {
+            await logoutApi();
+            dispatch(logout());
+            navigate('/', {
+                replace: true,
+                state: { message: "ביי ביי תודה" }
+            });
 
-    } catch (error) {
-        console.error("שגיאה בהתנתקות מול השרת:", error);
-    }
-};
+        } catch (error) {
+            console.error("שגיאה בהתנתקות מול השרת:", error);
+        }
+    };
 
     const navLinkClass = ({ isActive }) =>
         `px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
@@ -45,8 +45,12 @@ function Navbar() {
 
                     <div className="flex gap-2">
                         <NavLink to="/dashbord" className={navLinkClass}>דאשבורד</NavLink>
+                        <NavLink to="/deep-analysis" className={navLinkClass}>ניתוח תיק לעומק</NavLink>
+                        <NavLink to="/analytics" className={navLinkClass}>ביצועים ואנליזה</NavLink>
                         <NavLink to="/orders" className={navLinkClass}>פקודות מסחר</NavLink>
+                        <NavLink to="/history" className={navLinkClass}>היסטוריית פעולות</NavLink>
                         <NavLink to="/watchlist/AAPL" className={navLinkClass}>רשימת מעקב</NavLink>
+                        <NavLink to="/charts/AAPL" className={navLinkClass}>גרפים</NavLink>
                     </div>
                 </div>
 

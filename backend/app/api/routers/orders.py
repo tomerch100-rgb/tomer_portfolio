@@ -10,12 +10,12 @@ router = APIRouter(
 )
 
 @router.post("/add_stock")
-def add_stock(
+async def add_stock(
     stock_info: StockInfo, 
     user_id = Depends(security.get_current_user_id), 
     db: Session = Depends(get_db)
 ):
-    return pf.add_stock(db, user_id, stock_info.stock, stock_info.shares, stock_info.avg_price)
+    return await pf.add_stock(db, user_id, stock_info.stock, stock_info.shares, stock_info.avg_price)
 
 @router.post("/sell_stock") 
 def sell_stock(

@@ -12,6 +12,9 @@ class Portfolio(Base):
     shares = Column(Numeric(10, 4), nullable=False)
     avg_price = Column(Numeric(10, 2), nullable=False)
     sector = Column(String(50), nullable=False)
+    risk_level = Column(String(20), nullable=True)
+    take_profit = Column(Numeric(10, 2), nullable=True)
+    stop_loss = Column(Numeric(10, 2), nullable=True)
     
     owner = relationship("User", back_populates="portfolio")
     
