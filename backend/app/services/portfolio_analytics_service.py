@@ -1,17 +1,11 @@
 from app.services.stock_service import get_analysis_data, get_prices_from_alpaca
-import app.services.stock_charts as sc
-
 async def stock_analysis(spec_stock: str):
-    # here you analyze the stock and show you 1 month graph ago
+    # here you analyze the stock
     spec_stock = spec_stock.upper()
     try:
         market_cap, pe_st, expert_recommend, graf = await get_analysis_data(spec_stock)
         if market_cap is None:
             return "The stock does not exist or there was an error fetching data."
-        if not graf.empty:
-            sc.month_graf(spec_stock, graf)
-        else:
-            return f"Could not generate graph for {spec_stock} - No history available."    
 
         return f"for the stock: {spec_stock}  market ca: {market_cap} the PE is: {pe_st} the expert recomendation: {expert_recommend}   "
 

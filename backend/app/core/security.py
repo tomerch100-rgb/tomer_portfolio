@@ -26,7 +26,7 @@ def verify_password (stored_hash,check_password) :
     return bcrypt.checkpw(bytes_password,bytes_hash)
       
 def creat_token (user_id) :
-    expire_time = datetime.now(timezone.utc) + timedelta(minutes=30)       
+    expire_time = datetime.now(timezone.utc) + timedelta(minutes=60)       
     payload = {
         "sub" : str(user_id),
         "exp" : expire_time

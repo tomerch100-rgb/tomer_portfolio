@@ -9,8 +9,7 @@ from .transaction_service import transaction_log_history
 from .portfolio_analytics_service import stock_analysis, get_stock_details
 from .portfolio_watchlist_service import post_watchlist, get_watchlist
 from .portfolio_chart_service import (
-    get_protfolio_pie, get_daily_change, plot_protfolio_pie, 
-    plot_daily_change, plot_portfolio_history
+    get_protfolio_pie, get_daily_change, get_portfolio_history
 )
 
 __all__ = [
@@ -20,6 +19,5 @@ __all__ = [
     "transaction_log_history",
     "stock_analysis", "get_stock_details",
     "post_watchlist", "get_watchlist",
-    "get_protfolio_pie", "get_daily_change", "plot_protfolio_pie", 
-    "plot_daily_change", "plot_portfolio_history"
+    "get_protfolio_pie", "get_daily_change"
 ]
