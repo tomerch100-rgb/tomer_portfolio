@@ -3,9 +3,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { displayPortfolio, getPortfolioHistory, transaction_log } from '../services/dashbordService';
+import { displayPortfolio, getPortfolioHistory, transaction_log, getTransactionsSummary } from '../services/dashbordService';
 import useFetchData from '../hooks/useFetchData';
-import { Loader2, AlertCircle, TrendingUp, PieChart as PieIcon, BarChart3 } from 'lucide-react';
+import { Loader2, AlertCircle, TrendingUp, PieChart as PieIcon, BarChart3, DollarSign, Activity } from 'lucide-react';
 
 const formatCurrency = (val) => {
     const num = Number(val);
@@ -33,6 +33,12 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
+const formatPercent = (val) => {
+    const num = Number(val);
+    if (isNaN(num)) return "0.00%";
+    return `${num >= 0 ? "+" : ""}${num.toFixed(2)}%`;
+};
+
 const PieTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
         return (
@@ -49,8 +55,9 @@ function PortfolioAnalytics() {
     const { data: portfolioDisplay, isLoading: loadingPortfolio } = useFetchData(displayPortfolio);
     const { data: portfolioHistory, isLoading: loadingHistory } = useFetchData(getPortfolioHistory);
     const { data: transactions, isLoading: loadingTransactions } = useFetchData(transaction_log);
+    const { data: summary, isLoading: loadingSummary } = useFetchData(getTransactionsSummary);
 
-    const isLoading = loadingPortfolio || loadingHistory || loadingTransactions;
+    const isLoading = loadingPortfolio || loadingHistory || loadingTransactions || loadingSummary;
 
     const sectorData = useMemo(() => {
         if (!portfolioDisplay) return [];
@@ -95,6 +102,35 @@ function PortfolioAnalytics() {
                     <p className="text-zinc-400 text-sm">גרפים, התפלגות סקטורים ורווחים ממומשים בתיק.</p>
                 </div>
             </div>
+
+            {/* Realized P&L Card */}
+            {summary && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-6 backdrop-blur-xl flex flex-col justify-center">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-blue-500/10 rounded-xl">
+                                <DollarSign className="w-5 h-5 text-blue-400" />
+                            </div>
+                            <h2 className="text-zinc-400 text-sm font-semibold uppercase tracking-wider">Realized P&L Amount</h2>
+                        </div>
+                        <p className={`text-3xl font-bold font-mono mt-2 ${summary.realized_pl_total >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {formatCurrencyPrecise(summary.realized_pl_total)}
+                        </p>
+                    </div>
+
+                    <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-6 backdrop-blur-xl flex flex-col justify-center">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-purple-500/10 rounded-xl">
+                                <Activity className="w-5 h-5 text-purple-400" />
+                            </div>
+                            <h2 className="text-zinc-400 text-sm font-semibold uppercase tracking-wider">Realized P&L Percentage</h2>
+                        </div>
+                        <p className={`text-3xl font-bold font-mono mt-2 ${summary.realized_pl_percentage >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {formatPercent(summary.realized_pl_percentage)}
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Area Chart */}
             <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-6 backdrop-blur-xl">

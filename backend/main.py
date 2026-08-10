@@ -1,7 +1,10 @@
-from app.api.routers import auth , orders ,display,analysis,charts_r,home_page,watchlist
+from app.api.routers import auth , orders ,display,analysis,charts_r,home_page,watchlist,transaction_router
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware 
 from fastapi import FastAPI
+from app.db.session import engine  
+from app.db.base_class import Base
+
 
 app = FastAPI()
 
@@ -27,10 +30,9 @@ app.include_router(analysis.router )
 app.include_router(charts_r.router)
 app.include_router(home_page.router )
 app.include_router(watchlist.router )
+app.include_router(transaction_router.router)
 
 
-from app.db.session import engine  
-from app import models
-from app.db.base_class import Base
+
 
 Base.metadata.create_all(bind=engine)

@@ -9,19 +9,35 @@ class TransactionCreate(BaseModel):
     price: float
     realized_pl: Optional[float] = 0.0
 
+class TradeTransactionCreate(BaseModel):
+    ticker: str
+    type: str # 'BUY' or 'SELL'
+    shares: float
+    price: float
+
 class TransactionResponse(BaseModel):
     id: int
     user_id: int
-    ticker: str
+    ticker: Optional[str] = None
     type: str
-    shares: float
-    price: float
+    shares: Optional[float] = None
+    price: Optional[float] = None
     transaction_date: datetime
-    realized_pl: float
+    realized_pl: Optional[float] = 0.0
+    cashflow: Optional[float] = 0.0
 
     model_config = ConfigDict(from_attributes=True)
 
-# Legacy / Compatibility Helper Class (Renamed from transition_log to follow PascalCase)
+class CashTransactionCreate(BaseModel):
+    type: str # 'DEPOSIT' or 'WITHDRAW'
+    cash_amount: float
+
+class TransactionSummaryResponse(BaseModel):
+    available_cash: float
+    total_account_value: float
+    realized_pl_total: float
+    realized_pl_percentage: float
+
 class TransactionLog:
     def __init__(self, ticker: str, action_type: str, shares: float, price: float, realized_pl: float, transaction_date: datetime):
         self.ticker = ticker

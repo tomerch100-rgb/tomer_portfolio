@@ -145,30 +145,3 @@ async def get_sector_from_yfinance(ticker: str):
     
 
 
-
-# def ticker_previousClose(stock):
-#     stock = stock.upper()
-#     cached_data = cache.get_stock_data(stock) 
-#     if cached_data is not None:
-#         return cached_data.get("previousClose")
-    
-#     ticker_check = yf.Ticker(stock)
-#     if ticker_check.fast_info is None or not ticker_check.fast_info:
-#         return None
-        
-#     cache.set_cache_dic(stock, dict(ticker_check.fast_info))
-#     return ticker_check.fast_info.get("previousClose")
-
-
-# def ticker_last_price(stock):
-#     stock = stock.upper()
-#     cached_data = cache.get_stock_data(stock) 
-#     if cached_data is not None:
-#         return cached_data.get("lastPrice")
-
-#     ticker_check = yf.Ticker(stock)
-#     if ticker_check.fast_info is None or not ticker_check.fast_info:
-#         return None
-        
-#     cache.set_cache_dic(stock, dict(ticker_check.fast_info))
-#     return ticker_check.fast_info.get("lastPrice")

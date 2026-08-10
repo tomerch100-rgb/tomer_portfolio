@@ -1,5 +1,15 @@
 import api from "./api";
 
+export const getTransactionsSummary = async () => {
+    try {
+        const response = await api.get('/transactions/summary');
+        return response.data;
+    } catch (error) {
+        console.error("שגיאה בהבאת נתוני מזומן:", error);
+        throw error;
+    }
+};
+
 export const displayPortfolio = async () => {
     try {
         const response = await api.get('/display/show_portfolio');

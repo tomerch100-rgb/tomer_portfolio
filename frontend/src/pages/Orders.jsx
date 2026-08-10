@@ -1,159 +1,266 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { addStock, sellStock } from "../services/ordersService";
+import { executeTrade, executeCashTransaction } from "../services/ordersService";
+import { getTransactionsSummary } from "../services/dashbordService";
+import { DollarSign, Wallet, ArrowRightLeft, TrendingUp, TrendingDown, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
 function Orders() {
-    const { register, handleSubmit, formState: { errors }, reset } = useForm();
-    const [orderType, setOrderType] = useState("buy");
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { register: registerTrade, handleSubmit: handleTradeSubmit, formState: { errors: tradeErrors }, reset: resetTrade, watch: watchTrade } = useForm();
+    const { register: registerCash, handleSubmit: handleCashSubmit, formState: { errors: cashErrors }, reset: resetCash } = useForm();
+    
+    const [orderType, setOrderType] = useState("BUY");
+    const [cashType, setCashType] = useState("DEPOSIT");
+    
+    const [isSubmittingTrade, setIsSubmittingTrade] = useState(false);
+    const [isSubmittingCash, setIsSubmittingCash] = useState(false);
+    
+    const [summary, setSummary] = useState({ available_cash: 0, total_account_value: 0 });
+    const [isLoadingSummary, setIsLoadingSummary] = useState(true);
 
-    const onSubmit = async (data) => {
-        setIsSubmitting(true);
-
-        // הופכים את סימול המניה לאותיות גדולות (למשל aapl -> AAPL)
-        const formattedData = {
-            ...data,
-            stock: data.stock.toUpperCase()
-        };
-
+    const fetchSummary = async () => {
         try {
-            let response;
-            if (orderType === "buy") {
-                response = await addStock(formattedData);
-            } else {
-                response = await sellStock(formattedData);
-            }
-
-            console.log("הפעולה בוצעה בהצלחה:", response);
-            reset(); // מנקה את השדות בטופס לאחר הצלחה
-
-            // תוספת מומלצת: אפשר להוסיף פה alert או Toast כדי לעדכן את המשתמש
-            alert("הפעולה בוצעה בהצלחה!");
-
+            const data = await getTransactionsSummary();
+            setSummary(data);
         } catch (error) {
-            console.error("לא הצלחנו לבצע את הפעולה:", error);
-            alert("שגיאה בביצוע הפעולה, אנא נסה שוב.");
+            console.error("Failed to load summary", error);
         } finally {
-            setIsSubmitting(false);
+            setIsLoadingSummary(false);
         }
     };
 
-    return (
-        <div className="w-full max-w-md mx-auto p-8 bg-[#121214] border border-zinc-800 rounded-3xl shadow-2xl font-sans">
-            <h2 className="text-2xl font-bold text-zinc-100 mb-8 text-center tracking-tight">
-                Trade Stocks
-            </h2>
+    useEffect(() => {
+        fetchSummary();
+    }, []);
 
-            {/* Type Selector (Buy / Sell) */}
-            <div className="flex gap-4 mb-8">
-                <button
-                    type="button"
-                    onClick={() => setOrderType("buy")}
-                    className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#121214] focus:ring-green-500 ${orderType === "buy"
-                            ? "bg-green-600 text-green-50 shadow-lg shadow-green-600/30 scale-[0.98] ring-1 ring-green-500"
-                            : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-                        }`}
-                >
-                    Buy
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setOrderType("sell")}
-                    className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#121214] focus:ring-red-500 ${orderType === "sell"
-                            ? "bg-red-600 text-red-50 shadow-lg shadow-red-600/30 scale-[0.98] ring-1 ring-red-500"
-                            : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-                        }`}
-                >
-                    Sell
-                </button>
+    const watchShares = watchTrade("shares", 0);
+    const watchPrice = watchTrade("price", 0);
+    const totalCost = (Number(watchShares) || 0) * (Number(watchPrice) || 0);
+
+    const isBuyDisabled = orderType === "BUY" && totalCost > summary.available_cash;
+
+    const onTradeSubmit = async (data) => {
+        setIsSubmittingTrade(true);
+        const formattedData = {
+            ...data,
+            ticker: data.ticker.toUpperCase(),
+            type: orderType
+        };
+
+        try {
+            await executeTrade(formattedData);
+            alert("Trade executed successfully!");
+            resetTrade();
+            fetchSummary();
+        } catch (error) {
+            alert(error.response?.data?.detail || "Trade execution failed.");
+        } finally {
+            setIsSubmittingTrade(false);
+        }
+    };
+
+    const onCashSubmit = async (data) => {
+        setIsSubmittingCash(true);
+        const formattedData = {
+            ...data,
+            type: cashType
+        };
+
+        try {
+            await executeCashTransaction(formattedData);
+            alert("Cash transaction successful!");
+            resetCash();
+            fetchSummary();
+        } catch (error) {
+            alert(error.response?.data?.detail || "Cash transaction failed.");
+        } finally {
+            setIsSubmittingCash(false);
+        }
+    };
+
+    const formatCurrency = (val) => {
+        return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(val);
+    };
+
+    return (
+        <div className="w-full max-w-6xl mx-auto p-4 sm:p-8 font-sans space-y-8">
+            
+            {/* Header Badge */}
+            <div className="flex flex-col sm:flex-row gap-6 items-center justify-between bg-[#121214] border border-emerald-500/30 p-6 rounded-3xl shadow-xl shadow-emerald-900/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-10">
+                    <Wallet size={120} className="text-emerald-500" />
+                </div>
+                <div>
+                    <h2 className="text-zinc-400 font-semibold tracking-wide uppercase text-sm mb-1">Available Cash</h2>
+                    <div className="flex items-center gap-3 text-4xl font-bold text-emerald-400">
+                        <DollarSign className="w-8 h-8" />
+                        {isLoadingSummary ? "..." : formatCurrency(summary.available_cash)}
+                    </div>
+                </div>
+                <div className="bg-zinc-900/80 px-6 py-4 rounded-2xl border border-zinc-800 z-10">
+                    <h3 className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-1">Total Account Value</h3>
+                    <p className="text-xl font-bold text-white">{isLoadingSummary ? "..." : formatCurrency(summary.total_account_value)}</p>
+                </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                {/* Stock Symbol Input */}
-                <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-zinc-400">
-                        Stock Symbol
-                    </label>
-                    <input
-                        {...register("stock", { required: "Stock is required" })}
-                        type="text"
-                        placeholder="e.g. AAPL"
-                        style={{ textTransform: "uppercase" }}
-                        className={`w-full px-4 py-3 bg-zinc-900/50 border rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none transition-all duration-200 ${orderType === "buy"
-                                ? "focus:border-green-500 focus:ring-1 focus:ring-green-500"
-                                : "focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                            } ${errors.stock ? "border-rose-500" : "border-zinc-800"}`}
-                    />
-                    {errors.stock && (
-                        <p className="text-xs text-rose-500 font-medium">{errors.stock.message}</p>
-                    )}
-                </div>
-
-                {/* Shares Input */}
-                <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-zinc-400">
-                        Shares
-                    </label>
-                    <input
-                        {...register("shares", {
-                            required: "Shares quantity is required",
-                            valueAsNumber: true,
-                            min: { value: 0.0001, message: "Quantity must be > 0" }
-                        })}
-                        type="number"
-                        step="any"
-                        placeholder="0.00"
-                        className={`w-full px-4 py-3 bg-zinc-900/50 border rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none transition-all duration-200 ${orderType === "buy"
-                                ? "focus:border-green-500 focus:ring-1 focus:ring-green-500"
-                                : "focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                            } ${errors.shares ? "border-rose-500" : "border-zinc-800"}`}
-                    />
-                    {errors.shares && (
-                        <p className="text-xs text-rose-500 font-medium">{errors.shares.message}</p>
-                    )}
-                </div>
-
-                {/* Average Price Input */}
-                <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-zinc-400">
-                        Price per Share
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">$</span>
-                        <input
-                            {...register("avg_price", {
-                                required: "Price is required",
-                                valueAsNumber: true,
-                                min: { value: 0.01, message: "Price must be > 0" }
-                            })}
-                            type="number"
-                            step="any"
-                            placeholder="0.00"
-                            className={`w-full pl-8 pr-4 py-3 bg-zinc-900/50 border rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none transition-all duration-200 ${orderType === "buy"
-                                    ? "focus:border-green-500 focus:ring-1 focus:ring-green-500"
-                                    : "focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                                } ${errors.avg_price ? "border-rose-500" : "border-zinc-800"}`}
-                        />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Stock Trading Form */}
+                <div className="bg-[#121214] border border-zinc-800 rounded-3xl shadow-2xl p-6 sm:p-8">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-blue-500/10 rounded-xl">
+                            <ArrowRightLeft className="text-blue-500 w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white">Stock Trading</h3>
                     </div>
-                    {errors.avg_price && (
-                        <p className="text-xs text-rose-500 font-medium">{errors.avg_price.message}</p>
-                    )}
+
+                    <div className="flex gap-4 mb-8">
+                        <button
+                            type="button"
+                            onClick={() => setOrderType("BUY")}
+                            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 ease-in-out focus:outline-none ${orderType === "BUY"
+                                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-1 ring-emerald-500"
+                                    : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                                }`}
+                        >
+                            <span className="flex items-center justify-center gap-2">
+                                <TrendingUp className="w-4 h-4" /> Buy
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setOrderType("SELL")}
+                            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 ease-in-out focus:outline-none ${orderType === "SELL"
+                                    ? "bg-rose-600 text-white shadow-lg shadow-rose-600/30 ring-1 ring-rose-500"
+                                    : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                                }`}
+                        >
+                            <span className="flex items-center justify-center gap-2">
+                                <TrendingDown className="w-4 h-4" /> Sell
+                            </span>
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleTradeSubmit(onTradeSubmit)} className="space-y-5">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-zinc-400">Stock Ticker</label>
+                            <input
+                                {...registerTrade("ticker", { required: "Ticker is required" })}
+                                type="text"
+                                placeholder="e.g. AAPL"
+                                className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 uppercase"
+                            />
+                            {tradeErrors.ticker && <p className="text-xs text-rose-500">{tradeErrors.ticker.message}</p>}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-medium text-zinc-400">Shares</label>
+                                <input
+                                    {...registerTrade("shares", { required: "Required", valueAsNumber: true, min: 0.0001 })}
+                                    type="number" step="any" placeholder="0.00"
+                                    className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-medium text-zinc-400">Price</label>
+                                <input
+                                    {...registerTrade("price", { required: "Required", valueAsNumber: true, min: 0.01 })}
+                                    type="number" step="any" placeholder="0.00"
+                                    className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center py-2 border-t border-zinc-800/50 mt-4">
+                            <span className="text-zinc-400 text-sm">Estimated Total</span>
+                            <span className={`font-mono font-bold ${isBuyDisabled ? 'text-rose-400' : 'text-white'}`}>
+                                {formatCurrency(totalCost)}
+                            </span>
+                        </div>
+                        
+                        {isBuyDisabled && (
+                            <p className="text-xs text-rose-500 bg-rose-500/10 p-2 rounded-lg border border-rose-500/20">
+                                ⚠️ Insufficient available cash for this order.
+                            </p>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={isSubmittingTrade || isBuyDisabled}
+                            className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all ${
+                                isSubmittingTrade || isBuyDisabled ? "opacity-50 cursor-not-allowed bg-zinc-700 text-zinc-400" 
+                                : orderType === "BUY" ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-rose-600 hover:bg-rose-500 text-white"
+                            }`}
+                        >
+                            {isSubmittingTrade ? "Processing..." : `Execute ${orderType}`}
+                        </button>
+                    </form>
                 </div>
 
-                {/* Submit Button */}
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full mt-8 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#121214] active:scale-[0.98] ${orderType === "buy"
-                            ? "bg-green-600 hover:bg-green-500 text-green-50 focus:ring-green-500 shadow-lg shadow-green-600/20"
-                            : "bg-red-600 hover:bg-red-500 text-red-50 focus:ring-red-500 shadow-lg shadow-red-600/20"
-                        } ${isSubmitting ? "opacity-70 cursor-not-allowed" : "cursor-pointer"}`}
-                >
-                    {isSubmitting
-                        ? "Processing..."
-                        : orderType === "buy" ? "Execute Buy" : "Execute Sell"}
-                </button>
-            </form>
+                {/* Cash Management Form */}
+                <div className="bg-[#121214] border border-zinc-800 rounded-3xl shadow-2xl p-6 sm:p-8">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-amber-500/10 rounded-xl">
+                            <DollarSign className="text-amber-500 w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white">Cash Management</h3>
+                    </div>
+
+                    <div className="flex gap-4 mb-8">
+                        <button
+                            type="button"
+                            onClick={() => setCashType("DEPOSIT")}
+                            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 ease-in-out focus:outline-none ${cashType === "DEPOSIT"
+                                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-1 ring-emerald-500"
+                                    : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                                }`}
+                        >
+                            <span className="flex items-center justify-center gap-2">
+                                <ArrowDownToLine className="w-4 h-4" /> Deposit
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCashType("WITHDRAW")}
+                            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 ease-in-out focus:outline-none ${cashType === "WITHDRAW"
+                                    ? "bg-rose-600 text-white shadow-lg shadow-rose-600/30 ring-1 ring-rose-500"
+                                    : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                                }`}
+                        >
+                            <span className="flex items-center justify-center gap-2">
+                                <ArrowUpFromLine className="w-4 h-4" /> Withdraw
+                            </span>
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleCashSubmit(onCashSubmit)} className="space-y-5">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-zinc-400">Amount</label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">$</span>
+                                <input
+                                    {...registerCash("cash_amount", { required: "Amount is required", valueAsNumber: true, min: 0.01 })}
+                                    type="number" step="any" placeholder="0.00"
+                                    className="w-full pl-8 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-amber-500"
+                                />
+                            </div>
+                            {cashErrors.cash_amount && <p className="text-xs text-rose-500">{cashErrors.cash_amount.message}</p>}
+                        </div>
+
+                        <div className="pt-4 mt-8">
+                            <button
+                                type="submit"
+                                disabled={isSubmittingCash}
+                                className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all ${
+                                    isSubmittingCash ? "opacity-50 cursor-not-allowed bg-zinc-700 text-zinc-400" 
+                                    : cashType === "DEPOSIT" ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-rose-600 hover:bg-rose-500 text-white"
+                                }`}
+                            >
+                                {isSubmittingCash ? "Processing..." : `${cashType} Cash`}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 }
