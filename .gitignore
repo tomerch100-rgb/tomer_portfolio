@@ -22,3 +22,9 @@ __pycache__/
 *$py.class
 node_modules/
 .tasks
+
+#alembic stuff
+env.py
+alembic.ini
+README
+script.py.mako

@@ -10,8 +10,8 @@ class Transaction(Base):
     user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
     ticker = Column(String(12), nullable=True)
     type = Column(String(10), nullable=False) # 'BUY' or 'SELL'
-    shares = Column(Numeric(10, 4), nullable=False)
-    price = Column(Numeric(10, 2), nullable=False)
+    shares = Column(Numeric(10, 4), nullable=True)
+    price = Column(Numeric(10, 2), nullable=True)
     transaction_date = Column(DateTime, server_default=func.now(), nullable=False)
     realized_pl = Column(Numeric(10, 2), default=0.00)
     cashflow = Column(Numeric(10, 2), default=0.00)
