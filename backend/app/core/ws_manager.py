@@ -17,3 +17,5 @@ class ConnectionManager:
         if user_id in self.active_connections:
             del self.active_connections[user_id]
             logger.info(f"User {user_id} disconnected from WebSocket.")
+
+manager = ConnectionManager()

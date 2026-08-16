@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-import app.services.portfolio_function as pf
+import app.services.portfolio as pf
 from app.core import security
 from app.services.stock_service import get_prices_from_alpaca
 

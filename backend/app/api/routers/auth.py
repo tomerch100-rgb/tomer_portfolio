@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Response, Depends,status
 from sqlalchemy.orm import Session
 from app.schemas import UserRegister, UserLogin
 from app.db.session import get_db
-import app.services.portfolio_function as pf
+import app.services.portfolio as pf
 from app.core import security
 
 router = APIRouter(
@@ -34,6 +34,9 @@ def login_user(user: UserLogin, response: Response, db: Session = Depends(get_db
     return {
         "user_id": user_id,
         "username": user.username,
+    # for the swagger
+    "access_token": access_token,
+        "token_type": "bearer",
     }
 
 

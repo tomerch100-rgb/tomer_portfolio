@@ -10,6 +10,7 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False)
     password_hash = Column(String(60), nullable=False)
     telegram_id = Column(String(50), unique=True, nullable=True, index=True)
+    telegram_connect_token = Column(String(255), unique=True, nullable=True, index=True)
     
     
     portfolio = relationship("Portfolio", back_populates="owner", cascade="all, delete-orphan")

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.core import security 
 from app.schemas import StockInfo
 from app.db.session import get_db
-import app.services.portfolio_function as pf
+import app.services.portfolio as pf
 
 router = APIRouter(
     tags=["orders"]  , prefix= "/orders"

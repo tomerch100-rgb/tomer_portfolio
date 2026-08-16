@@ -3,7 +3,7 @@ from sqlalchemy import select, func
 from app.crud import crud_portfolio, crud_transaction
 from app.models.transaction import Transaction
 from app.services.stock_service import get_prices_from_alpaca, get_analysis_data, get_sector_from_yfinance
-import app.services.helpers_stock as hp
+from . import helpers_stock as hp
 
 async def add_stock(db: Session, user_id: int, stock: str, shares: float, price_by: float):
     # you need to enter the name of the stock the price that 1 stock worth and how many shares    

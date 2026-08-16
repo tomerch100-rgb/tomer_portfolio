@@ -1,4 +1,5 @@
 from app.services.stock_service import get_analysis_data, get_prices_from_alpaca
+
 async def stock_analysis(spec_stock: str):
     # here you analyze the stock
     spec_stock = spec_stock.upper()

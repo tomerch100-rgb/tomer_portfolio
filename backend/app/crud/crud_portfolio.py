@@ -79,4 +79,5 @@ class CRUDPortfolio:
             .where(PortfolioHistory.user_id == user_id)
             .order_by(PortfolioHistory.calculation_date.asc())
         ).all())
+        
 crud_portfolio = CRUDPortfolio()

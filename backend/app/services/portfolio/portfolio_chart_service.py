@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.crud import crud_portfolio
-import app.services.helpers_stock as hp
+from . import helpers_stock as hp
 
 def get_protfolio_pie(db: Session, user_id: int):
     info_st = crud_portfolio.get_portfolio_all(db, user_id)
@@ -35,4 +35,3 @@ def get_portfolio_history(db: Session, user_id: int):
         portfolio_value.append(item.total_value)
         date_times.append(item.calculation_date)
     return {"date_times": date_times, "portfolio_value": portfolio_value}
-

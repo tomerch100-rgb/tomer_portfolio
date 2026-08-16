@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.crud import crud_transaction
-from app.services import portfolio_core_service
+from app.services.portfolio import portfolio_core_service
 
 async def execute_stock_trade(db: Session, user_id: int, type: str, ticker: str, shares: float, price: float):
     type = type.upper()

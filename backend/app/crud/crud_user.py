@@ -15,3 +15,5 @@ class CRUDUser:
         db.commit()
         db.refresh(db_user)
         return db_user
+
+crud_user = CRUDUser()

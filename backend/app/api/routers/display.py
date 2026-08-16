@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-import app.services.portfolio_function as pf
+import app.services.portfolio as pf
 from app.core import security
+from app.crud import crud_portfolio
 
 router = APIRouter(
     tags=["display"] , prefix= "/display"
@@ -23,7 +24,6 @@ def update_position(
     user_id: int = Depends(security.get_current_user_id), 
     db: Session = Depends(get_db)
 ):
-    from app.crud import crud_portfolio
     updated = crud_portfolio.update_position_analysis(
         db, user_id, data.ticker.upper(), data.risk_level, data.take_profit, data.stop_loss
     )
