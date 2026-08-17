@@ -1,23 +1,33 @@
+import asyncio
 from app.services.stock_service import get_analysis_data, get_prices_from_alpaca
 
 async def stock_analysis(spec_stock: str):
-    # here you analyze the stock
-    spec_stock = spec_stock.upper()
+    spec_stock = spec_stock.upper().strip()
     try:
-        market_cap, pe_st, expert_recommend, graf = await get_analysis_data(spec_stock)
-        if market_cap is None:
+        analysis = await get_analysis_data(spec_stock)
+        if not analysis:
             return "The stock does not exist or there was an error fetching data."
 
-        return f"for the stock: {spec_stock}  market ca: {market_cap} the PE is: {pe_st} the expert recomendation: {expert_recommend}   "
+        market_cap = analysis.get("marketCap")
+        pe_st = analysis.get("trailingPE")
+        expert_recommend = analysis.get("recommendationKey")
+        return f"for the stock: {spec_stock}  market ca: {market_cap} the PE is: {pe_st} the expert recomendation: {expert_recommend}"
 
     except Exception:
         return "The stock does not exist or there was an error fetching data."
 
 async def get_stock_details(stock: str):
-    stock = stock.upper()
+    stock = stock.upper().strip()
     try:
-        analysis = await get_analysis_data(stock) or {}
-        prices = await get_prices_from_alpaca(stock)
+        # Fetch analysis data and prices concurrently
+        analysis_task = get_analysis_data(stock)
+        prices_task = get_prices_from_alpaca(stock)
+        
+        results = await asyncio.gather(analysis_task, prices_task, return_exceptions=True)
+        
+        analysis = results[0] if isinstance(results[0], dict) else {}
+        prices = results[1] if isinstance(results[1], dict) else None
+
         if prices:
             last_price = prices.get("lastPrice")
             prev_close = prices.get("previousClose")

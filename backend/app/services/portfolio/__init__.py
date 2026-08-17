@@ -26,7 +26,11 @@ from .portfolio_core_service import (
     save_current_portfolio_value,
 )
 from .portfolio_analytics_service import stock_analysis, get_stock_details
-from .portfolio_watchlist_service import post_watchlist, get_watchlist
+from .portfolio_watchlist_service import (
+    post_watchlist,
+    get_watchlist,
+    update_alert_service,
+)
 from .portfolio_chart_service import (
     get_protfolio_pie,
     get_daily_change,

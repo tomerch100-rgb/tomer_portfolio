@@ -1,6 +1,7 @@
 import secrets
+import os
 from app.crud.crud_user import crud_user
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user_id
 from app.models.user import User
@@ -12,23 +13,30 @@ router = APIRouter(
 )
 
 @router.post("/generate-telegram-token")
-async def generate_telegram_token(current_user: tuple = Depends(get_current_user_id),db: Session = Depends(get_db)):
-    token = secrets.token_hex(16)
+async def generate_telegram_token(
+    current_user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    if not current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="User ID not found in token"
+        )
 
-    user_id = current_user
-    if not user_id:
-        raise HTTPException(status_code=400, detail="User ID not found in token")
-
-    user =  crud_user.get_user_by_id(db,user_id)
+    user = crud_user.get_user_by_id(db, current_user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found in database")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="User not found in database"
+        )
+
     token = secrets.token_hex(16)
     user.telegram_connect_token = token    
 
     db.commit()
     db.refresh(user)
 
-    bot_username = "TomerVestbot"
+    bot_username = os.getenv("TELEGRAM_BOT_USERNAME", "TomerVestbot")
     telegram_url = f"https://t.me/{bot_username}?start={token}"
 
     return {"telegram_url": telegram_url}

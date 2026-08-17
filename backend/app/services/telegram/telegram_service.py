@@ -2,9 +2,9 @@ import os
 import logging
 import asyncio
 from dotenv import load_dotenv
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
-
+from app.models.user import User
 from app.core.ws_manager import manager
 from aiogram import Bot, Dispatcher, Router, types, F
 from aiogram.filters import CommandStart, CommandObject
@@ -30,21 +30,37 @@ def sync_link_telegram_user(db: Session, token: str, telegram_id: str) -> tuple[
     Synchronously query, update, and commit user Telegram connection details.
     Runs inside a worker thread to keep the FastAPI asyncio event loop completely unblocked.
     """
-    logger.info(f"⚙️ Running sync_link_telegram_user - Token: {token}, Telegram ID: {telegram_id}")
+    telegram_id_str = str(telegram_id)
+    
+    logger.info(f"⚙️ Running sync_link_telegram_user - Token: {token}, Telegram ID: {telegram_id_str}")
+    
     try:
         user = db.scalars(select(User).where(User.telegram_connect_token == token)).first()
+        
         if not user:
             logger.warning(f"⚠️ Token not found in DB: {token}")
             return "invalid_token", None
-        
+            
         logger.info(f"👤 Matching user found: {user.username} (ID: {user.user_id})")
-        user.telegram_id = telegram_id
+
+        if user.telegram_id == telegram_id_str:
+            user.telegram_connect_token = None
+            db.commit()
+            return "already_linked", user.username
+
+        db.execute(
+            update(User)
+            .where(User.telegram_id == telegram_id_str)
+            .values(telegram_id=None)
+        )    
+
+        user.telegram_id = telegram_id_str
         user.telegram_connect_token = None
         
         db.commit()
         db.refresh(user)
         
-        logger.info(f"🎉 User {user.username} linked successfully to Telegram ID {telegram_id}")
+        logger.info(f"🎉 User {user.username} linked successfully to Telegram ID {telegram_id_str}")
         return "success", user.username
         
     except Exception as e:

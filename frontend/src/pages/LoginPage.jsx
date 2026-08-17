@@ -5,36 +5,59 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../store/authSlice";
 import Btn from "../components/Btn";
-import { TrendingUp, User, Lock, Eye, EyeOff } from "lucide-react";
+import { TrendingUp, User, Lock, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 
 function LoginForm() {
-  const [show, setshow] = useState(false)
-  const dispatch = useDispatch()
-  const showPassword = () => {
-    setshow(!show)
-  }
+  const [show, setshow] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const navigate = useNavigate()
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const showPassword = () => {
+    setshow(!show);
+  };
 
   const newUser = () => {
-    navigate("/register")
-  }
+    navigate("/register");
+  };
 
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
-    console.log("הנתונים שנשלחו בהצלחה:", data);
+    setIsLoading(true);
+    setAuthError("");
+
     try {
-      const response = await login(data)
+      const response = await login(data);
       console.log("ההתחברות עברה בהצלחה! התשובה מהשרת:", response);
-      dispatch(loginSuccess(response))
+
+      if (response?.access_token) {
+        localStorage.setItem("access_token", response.access_token);
+      }
+
+      dispatch(loginSuccess(response));
       navigate('/dashbord', {
         replace: true,
         state: { message: "ברוך הבא למערכת!" }
       });
 
     } catch (error) {
-      console.error("ההתחברות נכשלה, בדוק את פרטי המשתמש.");
+      console.error("ההתחברות נכשלה:", error);
+
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail;
+
+      if (status === 401 || detail === "wrong details") {
+        setAuthError("שם המשתמש או הסיסמה שגויים. נא לבדוק את הפרטים ולנסות שוב.");
+      } else if (!error.response) {
+        setAuthError("שגיאת תקשורת: השרת אינו מגיב. נא לבדוק שהשרת פועל.");
+      } else {
+        setAuthError(typeof detail === "string" ? detail : "שגיאה בהתחברות למערכת. נא לנסות שנית.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -49,8 +72,16 @@ function LoginForm() {
           <h1 className="text-3xl font-extrabold tracking-tight text-white">
             Tomer<span className="text-emerald-500">Vest</span>
           </h1>
-          <p className="text-sm text-zinc-400 mt-1.5 font-medium">ניהול נכון של הכסף שלך </p>
+          <p className="text-sm text-zinc-400 mt-1.5 font-medium">ניהול נכון של הכסף שלך</p>
         </div>
+
+        {/* Dynamic Auth Error Message Alert Banner */}
+        {authError && (
+          <div className="mb-6 bg-rose-950/40 border border-rose-800/60 rounded-xl p-3.5 flex items-center gap-3 text-rose-300 text-xs font-medium animate-fadeIn shadow-lg shadow-rose-950/20" dir="rtl">
+            <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+            <span className="leading-relaxed">{authError}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
@@ -106,7 +137,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={showPassword}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
               >
                 {show ? <EyeOff className="h-5 h-5" /> : <Eye className="h-5 h-5" />}
               </button>
@@ -118,11 +149,20 @@ function LoginForm() {
 
           {/* Action Buttons */}
           <div className="pt-2 space-y-3">
-            <Btn
-              text="התחברות"
+            <button
               type="submit"
-              design="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-emerald-950/20 cursor-pointer"
-            />
+              disabled={isLoading}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-emerald-950/20 cursor-pointer flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>מתחבר למערכת...</span>
+                </>
+              ) : (
+                <span>התחברות</span>
+              )}
+            </button>
 
             <div className="relative flex py-2 items-center">
               <div className="flex-grow border-t border-zinc-800"></div>

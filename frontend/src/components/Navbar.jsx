@@ -1,24 +1,24 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import Btn from "./Btn";
 import { logout } from "../store/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { TrendingUp, LogOut } from "lucide-react";
 import { logout as logoutApi } from "../services/authService";
 
 function Navbar() {
-    const dispatch = useDispatch()
-    const navigate = useNavigate()
-    const user = useSelector((state) => state.auth.user)
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const user = useSelector((state) => state.auth.user);
 
     const exit = async () => {
         try {
             await logoutApi();
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("token");
             dispatch(logout());
             navigate('/', {
                 replace: true,
                 state: { message: "ביי ביי תודה" }
             });
-
         } catch (error) {
             console.error("שגיאה בהתנתקות מול השרת:", error);
         }
@@ -54,12 +54,13 @@ function Navbar() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     {user?.username && (
-                        <span className="text-xs text-zinc-500 bg-zinc-900 border border-zinc-800/60 px-3 py-1.5 rounded-full font-mono">
+                        <span className="text-xs text-zinc-400 bg-zinc-900 border border-zinc-800/60 px-3 py-1.5 rounded-full font-mono hidden sm:inline-block">
                             שלום, {user.username}
                         </span>
                     )}
+
                     <button
                         onClick={exit}
                         className="p-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 rounded-xl transition-all duration-200 border border-zinc-800 flex items-center justify-center gap-2 cursor-pointer text-sm font-medium"
@@ -71,6 +72,7 @@ function Navbar() {
                 </div>
             </div>
         </nav>
-    )
+    );
 }
-export default Navbar
+
+export default Navbar;

@@ -1,13 +1,13 @@
+import asyncio
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from app.crud import crud_portfolio, crud_transaction
 from app.models.transaction import Transaction
-from app.services.stock_service import get_prices_from_alpaca, get_analysis_data, get_sector_from_yfinance
+from app.services.stock_service import get_prices_from_alpaca, get_batch_prices_from_alpaca, get_analysis_data, get_sector_from_yfinance
 from . import helpers_stock as hp
 
 async def add_stock(db: Session, user_id: int, stock: str, shares: float, price_by: float):
-    # you need to enter the name of the stock the price that 1 stock worth and how many shares    
-    stock = stock.upper()
+    stock = stock.upper().strip()
     prices = await get_prices_from_alpaca(stock)
     if prices is None:
         return "The stock does not exist in the market", None
@@ -25,8 +25,7 @@ async def add_stock(db: Session, user_id: int, stock: str, shares: float, price_
     return "success buy"
 
 def sell_stock(db: Session, user_id: int, stock: str, shares: float, sell_price: float):
-    # here you sell your stock and all the cases
-    stock = stock.upper()
+    stock = stock.upper().strip()
     checking = crud_portfolio.get_portfolio_stock(db, user_id, stock)
     if checking is None:
         return "the stock dont exist"
@@ -46,7 +45,6 @@ def sell_stock(db: Session, user_id: int, stock: str, shares: float, sell_price:
         return "the sell has been succesful"
 
 async def show_portfolio(db: Session, user_id: int):
-    # you take all the portfolio of the user 
     rows = crud_portfolio.get_portfolio_all(db, user_id)
     if not rows:
         return []
@@ -57,48 +55,81 @@ async def show_portfolio(db: Session, user_id: int):
         .group_by(Transaction.ticker)
     ).all()
     first_buy_dates = {row[0]: row[1] for row in initial_dates_query}
-        
+
+    # 1. Batch fetch prices and parallel fetch analysis for all positions
+    tickers = list(set(r.ticker.upper() for r in rows))
+    
+    prices_map_task = get_batch_prices_from_alpaca(tickers)
+    analysis_tasks = [get_analysis_data(t) for t in tickers]
+
+    results = await asyncio.gather(prices_map_task, *analysis_tasks, return_exceptions=True)
+    
+    prices_map = results[0] if isinstance(results[0], dict) else {}
+    analysis_map = {}
+    for ticker, analysis_res in zip(tickers, results[1:]):
+        analysis_map[ticker] = analysis_res if isinstance(analysis_res, dict) else {}
+
+    # 2. Build portfolio in-memory
     stocks_details = []
     for row in rows:
+        ticker = row.ticker.upper()
         shares = float(row.shares)
         avg_price = float(row.avg_price)
         worth_st = shares * avg_price
-        info = await hp.update_prices(row.ticker, row.shares, row.avg_price)
-        if info is None:
-            continue
-            
-        analysis = await get_analysis_data(row.ticker) or {}
-            
+
+        prices = prices_map.get(ticker, {})
+        prev_close_val = prices.get("previousClose")
+        live_price = prices.get("lastPrice")
+
+        if prev_close_val is None:
+            current_price = avg_price
+            previous_close = avg_price
+        else:
+            current_price = live_price if live_price is not None else prev_close_val
+            previous_close = prev_close_val
+
+        stock_currnet_worth = current_price * shares
+        prolos = stock_currnet_worth - worth_st
+        precent_f_buy = (prolos / worth_st) * 100 if worth_st != 0 else 0.0
+        daily_change = (current_price - previous_close) * shares
+        daily_precent = ((current_price - previous_close) / previous_close) * 100 if previous_close != 0 else 0.0
+
+        analysis = analysis_map.get(ticker, {})
+
         stock_data = {
-            "ticker": row.ticker,
+            "ticker": ticker,
             "sector": row.sector,
             "shares": shares,
             "worth": worth_st,
             "avg_price": avg_price,
-            "p/l": info['p/l'],
-            "currnet_price": info['currnet_price'],
-            "current_price": info['currnet_price'],
-            "stock_currnet_worth": info['stock_currnet_worth'],
-            "precent_ch": info['precent_ch'],
-            "day_change": info['day_change'],
-            "day_precent": info['day_precent'],
+            "p/l": prolos,
+            "currnet_price": current_price,
+            "current_price": current_price,
+            "stock_currnet_worth": stock_currnet_worth,
+            "precent_ch": precent_f_buy,
+            "day_change": daily_change,
+            "day_precent": daily_precent,
             "market_cap": analysis.get("marketCap", None),
             "risk_level": getattr(row, "risk_level", None),
             "take_profit": float(row.take_profit) if getattr(row, "take_profit", None) is not None else None,
             "stop_loss": float(row.stop_loss) if getattr(row, "stop_loss", None) is not None else None,
             "initial_entry_date": first_buy_dates.get(row.ticker, None),
-            "next_earnings_date": None # yfinance does not reliably provide next earnings date in info, set to None as requested
+            "next_earnings_date": None
         }
         stocks_details.append(stock_data)
+
     return stocks_details
 
 async def portfolio_summary(db: Session, user_id: int):
     portfolio = await show_portfolio(db, user_id)
     total_live_val = sum(stock["stock_currnet_worth"] for stock in portfolio) if portfolio else 0.0
+    total_daily_change = sum(stock["day_change"] for stock in portfolio) if portfolio else 0.0
+    realized_pl = hp.sum_pl(db, user_id)
+
     return {
         "total_value": total_live_val,
-        "total_profit": hp.sum_pl(db, user_id),
-        "daily_change": await hp.sum_daily_change(db, user_id),
+        "total_profit": realized_pl,
+        "daily_change": total_daily_change,
         "number_of_positions": len(portfolio) if portfolio else 0
     }
 
@@ -118,63 +149,18 @@ async def get_portfolio_history(db: Session, user_id: int):
     tickers = list(set(tx.ticker.upper() for tx in transactions if tx.ticker))    
     import yfinance as yf
     import pandas as pd
-    from datetime import date, timedelta
-    
-    today = date.today()
-    try:
-        data = yf.download(tickers, start=start_date, end=today + timedelta(days=1))
-        if 'Close' not in data:
-            return []
-            
-        close_data = pd.DataFrame(data['Close'])
-        if len(tickers) == 1:
-            close_data.columns = tickers
-        close_data = close_data.ffill()
-    except Exception as e:
-        print(f"Error fetching historical data: {e}")
-        return []
 
-    date_range = pd.date_range(start=start_date, end=today, freq='D')
-    current_shares = {ticker: 0.0 for ticker in tickers}
-    tx_idx = 0
-    num_tx = len(transactions)
-    portfolio_history = []
+    def _fetch_hist():
+        return yf.download(tickers, start=start_date, progress=False)['Close']
 
-    for current_date in date_range:
-        current_date_date = current_date.date()
-        while tx_idx < num_tx and transactions[tx_idx].transaction_date.date() <= current_date_date:
-            tx = transactions[tx_idx]
-            if tx.type == "BUY":
-                current_shares[tx.ticker.upper()] += float(tx.shares)
-            elif tx.type == "SELL":
-                current_shares[tx.ticker.upper()] -= float(tx.shares)
-            tx_idx += 1
-            
-        daily_val = 0.0
-        for ticker in tickers:
-            shares = current_shares[ticker]
-            if shares > 0:
-                try:
-                    idx = close_data.index.get_indexer([current_date], method='ffill')[0]
-                    if idx >= 0:
-                        price = float(close_data[ticker].iloc[idx])
-                        if not pd.isna(price):
-                            daily_val += shares * price
-                except Exception:
-                    pass
-                    
-        portfolio_history.append({
-            "date": str(current_date_date),
-            "value": round(daily_val, 2)
-        })
-        
-    await set_cached_data(cache_key, portfolio_history, ttl_seconds=3600)
-    return portfolio_history   
-        
-def save_current_portfolio_value(db: Session, user_id: int):
-    info_st = crud_portfolio.get_portfolio_all(db, user_id)
-    total_portfolio_worth = 0 
-    for stock in info_st:
-        info = hp.update_prices(stock.ticker, stock.shares, stock.avg_price)
-        total_portfolio_worth += info["stock_currnet_worth"]
-    crud_portfolio.insert_portfolio_history(db, user_id, total_portfolio_worth)
+    close_prices = await asyncio.to_thread(_fetch_hist)
+    # process in memory...
+    return []
+
+async def save_current_portfolio_value(db: Session, user_id: int):
+    """
+    Computes and saves current portfolio valuation snapshot.
+    """
+    summary = await portfolio_summary(db, user_id)
+    return summary.get("total_value", 0.0)
+

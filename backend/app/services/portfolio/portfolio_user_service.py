@@ -9,7 +9,8 @@ def get_me(db: Session, user_id: int):
     return {
         "user_id": user.user_id,
         "username": user.username,
-        "email": user.email
+        "email": user.email,
+        "telegram_id": user.telegram_id
     }
 
 def register_user(db: Session, username, password, email):
