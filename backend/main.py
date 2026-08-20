@@ -1,5 +1,6 @@
-from app.api.routers import auth, orders, display, analysis, charts_r, home_page, watchlist, transaction_router
+from app.api.routers import auth, orders, display, analysis, charts_r, home_page, watchlist, transaction_router, ws_router
 from dotenv import load_dotenv
+
 import os
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware 
@@ -82,5 +83,6 @@ app.include_router(watchlist.router)
 app.include_router(transaction_router.router)
 app.include_router(telegram_router)
 app.include_router(telegram_link.router)
+app.include_router(ws_router.router)
 
 Base.metadata.create_all(bind=engine)

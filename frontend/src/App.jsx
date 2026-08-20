@@ -17,6 +17,7 @@ import { useEffect } from "react"
 import { useDispatch } from "react-redux"
 import { checkAuth } from "./services/authService"
 import { loginSuccess, verificationCompleted } from "./store/authSlice"
+import { WebSocketProvider } from "./context/WebSocketContext"
 
 const router = createBrowserRouter([
   {
@@ -63,8 +64,11 @@ function App() {
     verifyUser()
   }, [dispatch])
 
-  return <RouterProvider router={router} />
-
+  return (
+    <WebSocketProvider>
+      <RouterProvider router={router} />
+    </WebSocketProvider>
+  )
 }
 
 export default App

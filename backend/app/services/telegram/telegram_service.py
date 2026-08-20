@@ -1,6 +1,7 @@
 import os
 import logging
 import asyncio
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -9,7 +10,6 @@ from app.core.ws_manager import manager
 from aiogram import Bot, Dispatcher, Router, types, F
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import Message as TelegramMessage
-from app.models import User
 from app.db.session import SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -25,10 +25,11 @@ bot_router = Router()
 
 dp.include_router(bot_router)
 
-def sync_link_telegram_user(db: Session, token: str, telegram_id: str) -> tuple[str, str | None]:
+def sync_link_telegram_user(db: Session, token: str, telegram_id: str) -> tuple[str, str | None, int | None]:
     """
     Synchronously query, update, and commit user Telegram connection details.
     Runs inside a worker thread to keep the FastAPI asyncio event loop completely unblocked.
+    Returns (status, username, user_id).
     """
     telegram_id_str = str(telegram_id)
     
@@ -39,14 +40,15 @@ def sync_link_telegram_user(db: Session, token: str, telegram_id: str) -> tuple[
         
         if not user:
             logger.warning(f"⚠️ Token not found in DB: {token}")
-            return "invalid_token", None
+            return "invalid_token", None, None
             
         logger.info(f"👤 Matching user found: {user.username} (ID: {user.user_id})")
+        user_id_pk = user.user_id
 
         if user.telegram_id == telegram_id_str:
             user.telegram_connect_token = None
             db.commit()
-            return "already_linked", user.username
+            return "already_linked", user.username, user_id_pk
 
         db.execute(
             update(User)
@@ -61,12 +63,12 @@ def sync_link_telegram_user(db: Session, token: str, telegram_id: str) -> tuple[
         db.refresh(user)
         
         logger.info(f"🎉 User {user.username} linked successfully to Telegram ID {telegram_id_str}")
-        return "success", user.username
+        return "success", user.username, user_id_pk
         
     except Exception as e:
         logger.error(f"❌ Database error in sync_link_telegram_user: {e}", exc_info=True)
         db.rollback()
-        return "error", None
+        return "error", None, None
 
 @bot_router.message(CommandStart())
 async def command_start_handler(
@@ -110,12 +112,30 @@ async def command_start_handler(
             return
 
         # Execute DB actions synchronously in a separate thread to prevent blocking FastAPI event loop
-        status, username = await asyncio.to_thread(
+        status, username, target_user_id = await asyncio.to_thread(
             sync_link_telegram_user, db, token, telegram_id_str
         )
         
-        if status == "success":
+        if status in ("success", "already_linked"):
             await message.answer(f"היי {username}, החיבור לטלגרם בוצע בהצלחה! 🎉")
+            
+            # Broadcast TELEGRAM_CONNECTED event across all active tabs of this user via WebSocket
+            if target_user_id:
+                try:
+                    ws_payload = {
+                        "type": "TELEGRAM_CONNECTED",
+                        "payload": {
+                            "telegram_id": int(telegram_id_str) if telegram_id_str.isdigit() else telegram_id_str,
+                            "connected_at": datetime.now(timezone.utc).isoformat(),
+                            "status": "CONNECTED"
+                        }
+                    }
+                    logger.info(f"📡 Broadcasting TELEGRAM_CONNECTED WS event to user {target_user_id}...")
+                    await manager.send_personal_message(ws_payload, user_id=target_user_id)
+                    logger.info(f"✅ WS event successfully broadcasted to user {target_user_id}")
+                except Exception as ws_err:
+                    logger.error(f"⚠️ Failed to send WS notification on telegram link: {ws_err}")
+
         elif status == "invalid_token":
             await message.answer("קישור החיבור פג תוקפו או שאינו חוקי. אנא צור קישור חדש באתר.")
         else:

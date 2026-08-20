@@ -1,21 +1,39 @@
-import logging
-from typing import Dict
 from fastapi import WebSocket
+import logging
 
-logger = logging.getLogger("ws_manager")
+logger = logging.getLogger(__name__)
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
+        self.active_connections: dict[int, list[WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket, user_id: str):
+    async def connect(self, websocket: WebSocket, user_id: int):
         await websocket.accept()
-        self.active_connections[user_id] = websocket
-        logger.info(f"User {user_id} connected via WebSocket.")
+        
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = []
+            
+        self.active_connections[user_id].append(websocket)
+        logger.info(f"🟢 User {user_id} connected via WS (Total tabs: {len(self.active_connections[user_id])})")
 
-    def disconnect(self, user_id: str):
+    def disconnect(self, websocket: WebSocket, user_id: int):
         if user_id in self.active_connections:
-            del self.active_connections[user_id]
-            logger.info(f"User {user_id} disconnected from WebSocket.")
+            if websocket in self.active_connections[user_id]:
+                self.active_connections[user_id].remove(websocket)
+            
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
+                
+        logger.info(f"🔴 User {user_id} tab disconnected")
+
+    async def send_personal_message(self, message: dict, user_id: int):
+        """שולח הודעה לכל הטאבים הפתוחים של המשתמש"""
+        user_sockets = self.active_connections.get(user_id, [])
+        
+        for websocket in user_sockets:
+            try:
+                await websocket.send_json(message)
+            except Exception as e:
+                logger.error(f"❌ Failed to send WS message to user {user_id}: {e}")
 
 manager = ConnectionManager()

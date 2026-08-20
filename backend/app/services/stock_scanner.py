@@ -3,7 +3,7 @@ import asyncio
 from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
+from app.core.ws_manager import manager
 from app.db.session import SessionLocal
 from app.models.watchlist import Watchlist
 from app.services.stock_service import get_batch_prices_from_alpaca
@@ -44,6 +44,7 @@ async def check_prices_and_alert():
 
         triggered_alerts = []
         alert_tasks = []
+        ws_tasks = []
 
         for alert in active_alerts:
             ticker = alert.ticker.upper()

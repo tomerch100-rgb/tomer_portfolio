@@ -12,7 +12,8 @@ import {
     BarChart3,
     LayoutGrid,
     Table as TableIcon,
-    ChevronLeft
+    ChevronLeft,
+    Zap
 } from "lucide-react";
 
 /**
@@ -100,9 +101,9 @@ export function AlertIndicator({ item, onOpenModal, size = "normal" }) {
 
 /**
  * Individual Stock Card Component
- * Fully responsive, non-clipped card with flexible visual hierarchy.
+ * Fully responsive, non-clipped card with live WebSocket price flash transitions.
  */
-export function WatchlistCard({ item, isSelected, onSelect, onOpenEditAlert }) {
+export function WatchlistCard({ item, isSelected, onSelect, onOpenEditAlert, flashDirection = null }) {
     const symbol = typeof item === "string" ? item : item.ticker;
     const currentPrice = typeof item === "object" ? item.current_price : null;
     const changePct = typeof item === "object" ? item.change_percent : null;
@@ -129,13 +130,21 @@ export function WatchlistCard({ item, isSelected, onSelect, onOpenEditAlert }) {
         return num.toLocaleString();
     };
 
+    const flashClass =
+        flashDirection === "UP"
+            ? "border-emerald-400/90 bg-emerald-500/20 shadow-[0_0_25px_rgba(16,185,129,0.35)] scale-[1.02]"
+            : flashDirection === "DOWN"
+            ? "border-rose-400/90 bg-rose-500/20 shadow-[0_0_25px_rgba(244,63,94,0.35)] scale-[1.02]"
+            : "";
+
     return (
         <div
             onClick={() => onSelect && onSelect(symbol)}
-            className={`w-full rounded-2xl p-4 border transition-all duration-200 cursor-pointer flex flex-col gap-3 group relative ${
-                isSelected
+            className={`w-full rounded-2xl p-4 border transition-all duration-300 cursor-pointer flex flex-col gap-3 group relative ${
+                flashClass ||
+                (isSelected
                     ? "bg-emerald-500/10 border-emerald-500/50 shadow-[0_4px_20px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/30"
-                    : "bg-zinc-900/70 border-zinc-800/80 hover:bg-zinc-800/60 hover:border-zinc-700/90 shadow-md"
+                    : "bg-zinc-900/70 border-zinc-800/80 hover:bg-zinc-800/60 hover:border-zinc-700/90 shadow-md")
             }`}
             dir="rtl"
         >
@@ -148,6 +157,18 @@ export function WatchlistCard({ item, isSelected, onSelect, onOpenEditAlert }) {
                         </span>
                         {isSelected && (
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                        )}
+                        {flashDirection && (
+                            <span
+                                className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 animate-pulse ${
+                                    flashDirection === "UP"
+                                        ? "bg-emerald-500 text-zinc-950"
+                                        : "bg-rose-500 text-white"
+                                }`}
+                            >
+                                <Zap className="w-3 h-3 fill-current" />
+                                LIVE
+                            </span>
                         )}
                     </div>
                 </div>
@@ -163,7 +184,15 @@ export function WatchlistCard({ item, isSelected, onSelect, onOpenEditAlert }) {
                 {/* Current Price */}
                 <div className="flex flex-col text-right">
                     <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">מחיר</span>
-                    <span className="font-mono font-bold text-sm text-zinc-100">
+                    <span
+                        className={`font-mono font-bold text-sm transition-colors duration-300 ${
+                            flashDirection === "UP"
+                                ? "text-emerald-400"
+                                : flashDirection === "DOWN"
+                                ? "text-rose-400"
+                                : "text-zinc-100"
+                        }`}
+                    >
                         {formatCurrency(currentPrice)}
                     </span>
                 </div>
@@ -220,7 +249,8 @@ function WatchlistTable({
     onSelectTicker,
     onOpenEditAlert,
     isLoading = false,
-    className = ""
+    className = "",
+    flashingStocks = {}
 }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("הכל");
@@ -345,6 +375,7 @@ function WatchlistTable({
                 <div className="space-y-3">
                     {filteredItems.map((item) => {
                         const symbol = typeof item === "string" ? item : item.ticker;
+                        const flash = flashingStocks[symbol] || null;
                         return (
                             <WatchlistCard
                                 key={symbol}
@@ -352,6 +383,7 @@ function WatchlistTable({
                                 isSelected={selectedTicker === symbol}
                                 onSelect={onSelectTicker}
                                 onOpenEditAlert={onOpenEditAlert}
+                                flashDirection={flash}
                             />
                         );
                     })}
@@ -376,13 +408,18 @@ function WatchlistTable({
                                 const currentPrice = typeof item === "object" ? item.current_price : null;
                                 const changePct = typeof item === "object" ? item.change_percent : null;
                                 const isPositive = Number(changePct) >= 0;
+                                const flash = flashingStocks[symbol] || null;
 
                                 return (
                                     <tr
                                         key={symbol}
                                         onClick={() => onSelectTicker && onSelectTicker(symbol)}
-                                        className={`transition-colors cursor-pointer group ${
-                                            isSelected
+                                        className={`transition-all duration-300 cursor-pointer group ${
+                                            flash === "UP"
+                                                ? "bg-emerald-500/20 text-white"
+                                                : flash === "DOWN"
+                                                ? "bg-rose-500/20 text-white"
+                                                : isSelected
                                                 ? "bg-emerald-500/10 text-white"
                                                 : "hover:bg-zinc-800/30 text-zinc-300"
                                         }`}
@@ -395,9 +432,28 @@ function WatchlistTable({
                                                 {isSelected && (
                                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                                 )}
+                                                {flash && (
+                                                    <span
+                                                        className={`text-[9px] font-mono font-bold px-1 rounded animate-pulse ${
+                                                            flash === "UP"
+                                                                ? "bg-emerald-500 text-zinc-950"
+                                                                : "bg-rose-500 text-white"
+                                                        }`}
+                                                    >
+                                                        LIVE
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
-                                        <td className="py-3 px-3.5 font-mono font-semibold text-zinc-100 text-xs">
+                                        <td
+                                            className={`py-3 px-3.5 font-mono font-semibold text-xs transition-colors ${
+                                                flash === "UP"
+                                                    ? "text-emerald-400 font-bold"
+                                                    : flash === "DOWN"
+                                                    ? "text-rose-400 font-bold"
+                                                    : "text-zinc-100"
+                                            }`}
+                                        >
                                             {formatCurrency(currentPrice)}
                                         </td>
                                         <td className="py-3 px-3.5" dir="ltr">

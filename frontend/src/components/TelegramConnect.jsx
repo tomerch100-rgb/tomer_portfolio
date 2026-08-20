@@ -1,17 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Send, CheckCircle2, Loader2, AlertCircle, RefreshCw, ExternalLink, BellRing } from "lucide-react";
-import { generateTelegramToken, fetchUserProfile, sendTestTelegramAlert } from "../services/telegramService";
+import {
+    Send,
+    CheckCircle2,
+    Loader2,
+    AlertCircle,
+    RefreshCw,
+    ExternalLink,
+    BellRing,
+    Sparkles,
+    Radio
+} from "lucide-react";
+import {
+    generateTelegramToken,
+    fetchUserProfile,
+    sendTestTelegramAlert
+} from "../services/telegramService";
 import { loginSuccess } from "../store/authSlice";
+import { useWebSocketEvent, useWebSocket } from "../hooks/useWebSocket";
 
 /**
  * TelegramConnect Component
- * Handles dynamic Telegram linking state, bot token generation, test alerts, and deep-link redirection.
+ * Handles dynamic Telegram linking state, bot token generation, test alerts,
+ * and instant multi-tab WebSocket synchronization on TELEGRAM_CONNECTED event.
  */
 function TelegramConnect({ user: propUser, className = "", compact = false }) {
     const dispatch = useDispatch();
     const reduxUser = useSelector((state) => state.auth.user);
     const user = propUser || reduxUser;
+
+    const { isConnected: isWsActive } = useWebSocket();
 
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -19,8 +37,41 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
     const [errorMsg, setErrorMsg] = useState("");
     const [linkSuccessMsg, setLinkSuccessMsg] = useState("");
     const [directTelegramUrl, setDirectTelegramUrl] = useState("");
+    const [justConnectedViaWs, setJustConnectedViaWs] = useState(false);
 
     const isConnected = Boolean(user?.telegram_id);
+
+    // WebSocket Event Listener: TELEGRAM_CONNECTED
+    // Instant zero-refresh sync across all open tabs!
+    useWebSocketEvent("TELEGRAM_CONNECTED", (event) => {
+        console.log("⚡ [WS Event Received] TELEGRAM_CONNECTED:", event);
+        const payload = event?.payload || {};
+        const telegramId = payload.telegram_id;
+
+        if (telegramId) {
+            // 1. Immediately update Redux global store so all components and tabs sync
+            const updatedUser = {
+                ...user,
+                telegram_id: telegramId,
+                telegram_connect_token: null
+            };
+            dispatch(loginSuccess(updatedUser));
+
+            // 2. Clear any pending loader/fallback link state
+            setIsLoading(false);
+            setDirectTelegramUrl("");
+            setErrorMsg("");
+
+            // 3. Trigger visual celebration & success notification
+            setLinkSuccessMsg("חשבון הטלגרם חובר בהצלחה! 🚀");
+            setJustConnectedViaWs(true);
+
+            // Auto-clear celebration pulse after 8 seconds
+            setTimeout(() => {
+                setJustConnectedViaWs(false);
+            }, 8000);
+        }
+    });
 
     // Generate token and open Telegram Bot link with popup-blocker resilience
     const handleConnectTelegram = async () => {
@@ -43,7 +94,7 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
 
             if (url && typeof url === "string" && url.startsWith("http")) {
                 setDirectTelegramUrl(url);
-                setLinkSuccessMsg("קישור הטלגרם נוצר בהצלחה!");
+                setLinkSuccessMsg("קישור ההתחברות נוצר! אשר את הבוט בטלגרם להשלמת החיבור.");
 
                 if (popupWindow && !popupWindow.closed) {
                     popupWindow.location.href = url;
@@ -60,15 +111,19 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
             if (err.response?.status === 401) {
                 setErrorMsg("משתמש אינו מחובר. נא להתחבר מחדש למערכת.");
             } else {
-                setErrorMsg(typeof detail === "string" ? detail : "שגיאה ביצירת קישור לטלגרם. נסה שוב.");
+                setErrorMsg(
+                    typeof detail === "string"
+                        ? detail
+                        : "שגיאה ביצירת קישור לטלגרם. נסה שוב."
+                );
             }
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Re-verify user authentication state from backend to check if Telegram ID was registered
-    const handleRefreshStatus = async () => {
+    // Re-verify user authentication state from backend as manual fallback
+    const handleRefreshStatus = useCallback(async () => {
         setIsRefreshing(true);
         setErrorMsg("");
         try {
@@ -86,7 +141,7 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
         } finally {
             setIsRefreshing(false);
         }
-    };
+    }, [dispatch]);
 
     // Send an immediate test alert to Telegram
     const handleTestAlert = async () => {
@@ -98,28 +153,58 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
             setLinkSuccessMsg(res.message || "הודעת בדיקה נשלחה לטלגרם!");
         } catch (err) {
             const detail = err.response?.data?.detail;
-            setErrorMsg(typeof detail === "string" ? detail : "שגיאה בשליחת הודעת הבדיקה לטלגרם");
+            setErrorMsg(
+                typeof detail === "string"
+                    ? detail
+                    : "שגיאה בשליחת הודעת הבדיקה לטלגרם"
+            );
         } finally {
             setIsTestingAlert(false);
         }
     };
 
+    // Fallback: Check status when returning focus to window (if not yet connected)
+    useEffect(() => {
+        const onWindowFocus = () => {
+            if (!isConnected) {
+                handleRefreshStatus();
+            }
+        };
+
+        window.addEventListener("focus", onWindowFocus);
+        return () => {
+            window.removeEventListener("focus", onWindowFocus);
+        };
+    }, [isConnected, handleRefreshStatus]);
+
     // --- State 1: Connected ---
     if (isConnected) {
         if (compact) {
             return (
-                <div 
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium shadow-sm ${className}`}
+                <div
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium shadow-sm transition-all duration-300 ${
+                        justConnectedViaWs ? "ring-2 ring-emerald-400 scale-105" : ""
+                    } ${className}`}
                     title={`מזהה טלגרם: ${user.telegram_id}`}
                 >
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span>מחובר לטלגרם ✅</span>
+                    {justConnectedViaWs && (
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-bounce" />
+                    )}
                 </div>
             );
         }
 
         return (
-            <div className={`p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-3xl shadow-lg flex flex-col gap-3 ${className}`} dir="rtl">
+            <div
+                className={`p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-3xl shadow-lg flex flex-col gap-3 transition-all duration-500 ${
+                    justConnectedViaWs
+                        ? "ring-2 ring-emerald-500/80 shadow-[0_0_25px_rgba(16,185,129,0.3)]"
+                        : ""
+                } ${className}`}
+                dir="rtl"
+            >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
@@ -127,10 +212,22 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <span className="font-bold text-white text-sm">מחובר לטלגרם ✅</span>
-                                <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold">
-                                    פעיל
+                                <span className="font-bold text-white text-sm">
+                                    מחובר לטלגרם ✅
                                 </span>
+                                <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                                    פעיל בזמן אמת
+                                </span>
+                                {isWsActive && (
+                                    <span
+                                        className="text-[10px] text-zinc-400 flex items-center gap-1 bg-zinc-900/80 px-2 py-0.5 rounded-full border border-zinc-800"
+                                        title="סנכרון רציף פועל ברקע"
+                                    >
+                                        <Radio className="w-3 h-3 text-emerald-400" />
+                                        Live WS
+                                    </span>
+                                )}
                             </div>
                             <p className="text-xs text-zinc-400 mt-0.5">
                                 התראות המחיר יישלחו לחשבונך בטלגרם באופן מיידי
@@ -150,7 +247,7 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
                             ) : (
                                 <BellRing className="w-3.5 h-3.5" />
                             )}
-                            <span>שלח הודעת בדיקה</span>
+                            <span>שלח הודעת בדיקה 🔔</span>
                         </button>
 
                         <button
@@ -159,15 +256,19 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
                             title="בדוק סטטוס חיבור"
                             className="p-2 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl transition-all disabled:opacity-50 cursor-pointer flex-shrink-0 border border-zinc-800"
                         >
-                            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-emerald-400" : ""}`} />
+                            <RefreshCw
+                                className={`w-4 h-4 ${
+                                    isRefreshing ? "animate-spin text-emerald-400" : ""
+                                }`}
+                            />
                         </button>
                     </div>
                 </div>
 
                 {linkSuccessMsg && (
-                    <div className="text-xs text-emerald-300 bg-emerald-950/40 border border-emerald-800/40 p-2 rounded-xl animate-fadeIn flex items-center gap-2">
+                    <div className="text-xs text-emerald-300 bg-emerald-950/50 border border-emerald-500/40 p-2.5 rounded-xl animate-fadeIn flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                        <span>{linkSuccessMsg}</span>
+                        <span className="font-semibold">{linkSuccessMsg}</span>
                     </div>
                 )}
 
@@ -202,7 +303,10 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
     }
 
     return (
-        <div className={`p-5 bg-gradient-to-r from-[#17212b]/80 via-[#131d27]/90 to-[#0e1621]/95 border border-sky-500/30 rounded-3xl shadow-xl flex flex-col gap-3.5 ${className}`} dir="rtl">
+        <div
+            className={`p-5 bg-gradient-to-r from-[#17212b]/80 via-[#131d27]/90 to-[#0e1621]/95 border border-sky-500/30 rounded-3xl shadow-xl flex flex-col gap-3.5 ${className}`}
+            dir="rtl"
+        >
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
                     <div className="w-11 h-11 rounded-2xl bg-[#229ED9]/20 border border-[#229ED9]/40 flex items-center justify-center text-[#229ED9] flex-shrink-0 shadow-inner">
@@ -245,7 +349,11 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
                         title="רענן ובדוק אם החיבור הושלם"
                         className="p-2.5 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-xl border border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer disabled:opacity-50 flex-shrink-0"
                     >
-                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-sky-400" : ""}`} />
+                        <RefreshCw
+                            className={`w-4 h-4 ${
+                                isRefreshing ? "animate-spin text-sky-400" : ""
+                            }`}
+                        />
                     </button>
                 </div>
             </div>
@@ -255,7 +363,7 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
                 <div className="flex items-center justify-between gap-3 p-3 bg-sky-950/40 border border-sky-500/40 rounded-xl text-xs text-sky-200 animate-fadeIn">
                     <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-sky-400 flex-shrink-0" />
-                        <span>הקישור נוצר! אם החלון לא נפתח אוטומטית:</span>
+                        <span>הקישור נוצר! לחץ כדי לפתוח את הבוט בטלגרם:</span>
                     </div>
                     <a
                         href={directTelegramUrl}
@@ -266,6 +374,14 @@ function TelegramConnect({ user: propUser, className = "", compact = false }) {
                         <span>פתח בטלגרם</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                     </a>
+                </div>
+            )}
+
+            {/* Success Message */}
+            {linkSuccessMsg && (
+                <div className="text-xs text-emerald-300 bg-emerald-950/40 border border-emerald-800/40 p-2.5 rounded-xl animate-fadeIn flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <span>{linkSuccessMsg}</span>
                 </div>
             )}
 

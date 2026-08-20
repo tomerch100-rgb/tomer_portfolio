@@ -6,9 +6,10 @@ import TelegramConnect from "../components/TelegramConnect";
 import SmartWatchlistAddForm from "../components/watchlist/SmartWatchlistAddForm";
 import WatchlistTable from "../components/watchlist/WatchlistTable";
 import EditAlertModal from "../components/watchlist/EditAlertModal";
+import { useWebSocketEvent } from "../hooks/useWebSocket";
 import {
     Star, ShieldCheck, Target, TrendingUp, TrendingDown,
-    BarChart2, Activity, PieChart, Layers, DollarSign, Bell
+    BarChart2, Activity, PieChart, Layers, DollarSign, Bell, BellRing, CheckCircle2, Zap
 } from "lucide-react";
 
 function Watchlist() {
@@ -20,12 +21,95 @@ function Watchlist() {
     
     // Local state for optimistic updates
     const [watchlistItems, setWatchlistItems] = useState([]);
+    const [flashingStocks, setFlashingStocks] = useState({});
+    const [liveAlertToast, setLiveAlertToast] = useState(null);
 
     useEffect(() => {
         if (Array.isArray(rawWatchlistData)) {
             setWatchlistItems(rawWatchlistData);
         }
     }, [rawWatchlistData]);
+
+    // WebSocket: Real-time Price Updates
+    useWebSocketEvent("PRICE_UPDATE", (event) => {
+        const symbol = event?.symbol || event?.ticker;
+        const price = event?.price;
+        const change = event?.change;
+        const changePct = event?.change_percent;
+        if (!symbol || price === undefined) return;
+
+        const upperSym = symbol.toUpperCase();
+
+        setWatchlistItems((prev) =>
+            prev.map((item) => {
+                const sym = typeof item === "string" ? item : item.ticker;
+                if (sym.toUpperCase() === upperSym) {
+                    const oldPrice = typeof item === "object" ? item.current_price : null;
+                    const dir =
+                        oldPrice != null
+                            ? Number(price) >= Number(oldPrice)
+                                ? "UP"
+                                : "DOWN"
+                            : Number(change) >= 0
+                            ? "UP"
+                            : "DOWN";
+
+                    // Trigger visual flash
+                    setFlashingStocks((prevFlash) => ({
+                        ...prevFlash,
+                        [upperSym]: dir
+                    }));
+
+                    setTimeout(() => {
+                        setFlashingStocks((prevFlash) => {
+                            const updated = { ...prevFlash };
+                            delete updated[upperSym];
+                            return updated;
+                        });
+                    }, 1800);
+
+                    return {
+                        ...(typeof item === "object" ? item : { ticker: sym }),
+                        current_price: Number(price),
+                        ...(change !== undefined ? { change: Number(change) } : {}),
+                        ...(changePct !== undefined ? { change_percent: Number(changePct) } : {})
+                    };
+                }
+                return item;
+            })
+        );
+    });
+
+    // WebSocket: Live Alert Triggers
+    useWebSocketEvent("ALERT_TRIGGERED", (event) => {
+        const payload = event?.payload || event;
+        const targetTicker = payload?.ticker || payload?.symbol;
+        if (targetTicker) {
+            const upperTicker = targetTicker.toUpperCase();
+            setWatchlistItems((prev) =>
+                prev.map((item) => {
+                    const sym = typeof item === "string" ? item : item.ticker;
+                    if (sym.toUpperCase() === upperTicker) {
+                        return {
+                            ...(typeof item === "object" ? item : { ticker: sym }),
+                            alert_triggered: true
+                        };
+                    }
+                    return item;
+                })
+            );
+
+            setLiveAlertToast({
+                ticker: upperTicker,
+                message: payload?.message || `התראת מחיר עבור ${upperTicker} הופעלה ונשלחה לטלגרם!`,
+                price: payload?.current_price || payload?.price
+            });
+
+            setTimeout(() => {
+                setLiveAlertToast(null);
+            }, 8000);
+        }
+    });
 
     // Fetch stock fundamental details for selected ticker
     const { data: stockDetails, isLoading: isDetailsLoading, error: detailsError } =
@@ -34,6 +118,7 @@ function Watchlist() {
     // Modal state
     const [selectedAlertItem, setSelectedAlertItem] = useState(null);
     const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+
 
     // Auto-navigate to first stock if no ticker selected in URL
     useEffect(() => {
@@ -118,6 +203,34 @@ function Watchlist() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 text-zinc-100 font-sans" dir="rtl">
+            {/* Live Alert Toast Banner */}
+            {liveAlertToast && (
+                <div className="mb-6 p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.25)] flex items-center justify-between gap-4 animate-bounce">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                            <BellRing className="w-5 h-5 animate-pulse" />
+                        </div>
+                        <div>
+                            <div className="text-xs font-mono font-bold text-white flex items-center gap-2">
+                                <span>התראת מחיר בזמן אמת! 🚀</span>
+                                <span className="px-2 py-0.5 rounded bg-amber-500/30 text-amber-200">
+                                    {liveAlertToast.ticker}
+                                </span>
+                            </div>
+                            <p className="text-xs text-amber-200/90 mt-0.5">
+                                {liveAlertToast.message}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setLiveAlertToast(null)}
+                        className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-xs font-semibold cursor-pointer"
+                    >
+                        סגור
+                    </button>
+                </div>
+            )}
+
             {/* Top Telegram Connect Banner */}
             <div className="mb-6">
                 <TelegramConnect />
@@ -158,9 +271,11 @@ function Watchlist() {
                             onSelectTicker={(sym) => navigate(`/watchlist/${sym}`)}
                             onOpenEditAlert={handleOpenEditAlert}
                             isLoading={isListLoading}
+                            flashingStocks={flashingStocks}
                         />
                     </div>
                 </div>
+
 
                 {/* Right Panel: Main Fundamental Research Display */}
                 <div className="flex-grow bg-[#121214] border border-zinc-800/80 rounded-3xl p-6 lg:p-8 flex flex-col justify-between shadow-xl">
