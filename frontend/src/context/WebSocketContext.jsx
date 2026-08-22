@@ -239,11 +239,12 @@ export function WebSocketProvider({ children }) {
                 playAlertSound();
             }
 
-            if (type === "ALERT_TRIGGERED") {
+            if (type === "ALERT_TRIGGERED" || type === "PORTFOLIO_ALERT_TRIGGERED") {
                 // Play notification alert chime
                 playAlertSound();
             }
         },
+
         [user, dispatch]
     );
 

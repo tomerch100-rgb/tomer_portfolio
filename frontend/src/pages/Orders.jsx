@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { executeTrade, executeCashTransaction } from "../services/ordersService";
 import { getTransactionsSummary } from "../services/dashbordService";
-import { DollarSign, Wallet, ArrowRightLeft, TrendingUp, TrendingDown, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { DollarSign, Wallet, ArrowRightLeft, TrendingUp, TrendingDown, ArrowDownToLine, ArrowUpFromLine, FileSpreadsheet, Sparkles } from "lucide-react";
+import ImportPortfolioModal from "../components/ImportPortfolioModal";
 
 function Orders() {
     const { register: registerTrade, handleSubmit: handleTradeSubmit, formState: { errors: tradeErrors }, reset: resetTrade, watch: watchTrade } = useForm();
@@ -13,6 +14,7 @@ function Orders() {
     
     const [isSubmittingTrade, setIsSubmittingTrade] = useState(false);
     const [isSubmittingCash, setIsSubmittingCash] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     
     const [summary, setSummary] = useState({ available_cash: 0, total_account_value: 0 });
     const [isLoadingSummary, setIsLoadingSummary] = useState(true);
@@ -84,23 +86,50 @@ function Orders() {
     return (
         <div className="w-full max-w-6xl mx-auto p-4 sm:p-8 font-sans space-y-8">
             
-            {/* Header Badge */}
-            <div className="flex flex-col sm:flex-row gap-6 items-center justify-between bg-[#121214] border border-emerald-500/30 p-6 rounded-3xl shadow-xl shadow-emerald-900/10 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
+            {/* Header Toolbar with Balances & Import Action Button */}
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-[#121214] border border-emerald-500/30 p-6 rounded-3xl shadow-xl shadow-emerald-900/10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                     <Wallet size={120} className="text-emerald-500" />
                 </div>
-                <div>
+                
+                <div className="z-10">
                     <h2 className="text-zinc-400 font-semibold tracking-wide uppercase text-sm mb-1">Available Cash</h2>
                     <div className="flex items-center gap-3 text-4xl font-bold text-emerald-400">
                         <DollarSign className="w-8 h-8" />
                         {isLoadingSummary ? "..." : formatCurrency(summary.available_cash)}
                     </div>
                 </div>
-                <div className="bg-zinc-900/80 px-6 py-4 rounded-2xl border border-zinc-800 z-10">
-                    <h3 className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-1">Total Account Value</h3>
-                    <p className="text-xl font-bold text-white">{isLoadingSummary ? "..." : formatCurrency(summary.total_account_value)}</p>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4 z-10 w-full md:w-auto">
+                    <div className="bg-zinc-900/80 px-6 py-4 rounded-2xl border border-zinc-800 w-full sm:w-auto text-center sm:text-right">
+                        <h3 className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-1">Total Account Value</h3>
+                        <p className="text-xl font-bold text-white">{isLoadingSummary ? "..." : formatCurrency(summary.total_account_value)}</p>
+                    </div>
+
+                    {/* AI Excel / CSV Import Trigger Button */}
+                    <button
+                        type="button"
+                        onClick={() => setIsImportModalOpen(true)}
+                        className="group relative flex items-center justify-center gap-2.5 px-5 py-4 rounded-2xl bg-gradient-to-r from-emerald-600/90 to-teal-600/90 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/40 border border-emerald-400/30 hover:border-emerald-400/60 transition-all active:scale-95 w-full sm:w-auto overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <FileSpreadsheet className="w-5 h-5 text-emerald-200 group-hover:scale-110 transition-transform" />
+                        <span>ייבא מניות מאקסל</span>
+                        <span className="flex items-center gap-1 text-[10px] uppercase font-extrabold bg-black/30 text-emerald-200 px-2 py-0.5 rounded-full border border-white/10">
+                            <Sparkles className="w-2.5 h-2.5 text-amber-300" /> AI
+                        </span>
+                    </button>
                 </div>
             </div>
+
+            {/* Import Portfolio Modal */}
+            <ImportPortfolioModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onSuccess={() => {
+                    fetchSummary();
+                }}
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Stock Trading Form */}

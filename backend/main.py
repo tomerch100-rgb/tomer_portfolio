@@ -1,4 +1,4 @@
-from app.api.routers import auth, orders, display, analysis, charts_r, home_page, watchlist, transaction_router, ws_router
+from app.api.routers import auth, orders, display, analysis, charts_r, home_page, watchlist, transaction_router, ws_router, import_router
 from dotenv import load_dotenv
 
 import os
@@ -84,5 +84,6 @@ app.include_router(transaction_router.router)
 app.include_router(telegram_router)
 app.include_router(telegram_link.router)
 app.include_router(ws_router.router)
+app.include_router(import_router.router)
 
 Base.metadata.create_all(bind=engine)

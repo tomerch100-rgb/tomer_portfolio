@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, Date, UniqueConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, Numeric, Date, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base_class import Base
@@ -15,6 +15,8 @@ class Portfolio(Base):
     risk_level = Column(String(20), nullable=True)
     take_profit = Column(Numeric(10, 2), nullable=True)
     stop_loss = Column(Numeric(10, 2), nullable=True)
+    tp_triggered = Column(Boolean, nullable=False, default=False, server_default="false")
+    sl_triggered = Column(Boolean, nullable=False, default=False, server_default="false")
     
     owner = relationship("User", back_populates="portfolio")
     

@@ -10,3 +10,11 @@ from .portfolio import (
 from .transaction import TransactionCreate, TransactionResponse, TransactionLog
 from .watchlist import WatchlistCreate, WatchlistResponse
 from .stock import StockInfo
+from .import_schema import (
+    TargetFieldEnum,
+    ColumnMappingSuggestion,
+    ImportPreviewResponse,
+    ImportConfirmRequest,
+    ImportItemResult,
+    ImportResultResponse,
+)

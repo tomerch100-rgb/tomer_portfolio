@@ -77,9 +77,24 @@ async def check_prices_and_alert():
                 triggered_alerts.append(alert)
                 alert_tasks.append(send_telegram_alert(db, alert.user_id, message))
 
+                ws_payload = {
+                    "type": "LIMIT_ALERT",
+                    "ticker": ticker,
+                    "price": float(current_price),
+                    "target": float(target),
+                    "direction": direction,
+                    "message": f"המניה {ticker} {direction_text} ({current_price:.2f}$)!"
+                }
+                ws_tasks.append(manager.send_personal_message(ws_payload, alert.user_id))
+
+
         if alert_tasks:
             logger.info(f"🚀 שולח {len(alert_tasks)} התראות טלגרם במקביל...")
             results = await asyncio.gather(*alert_tasks, return_exceptions=True)
+
+            if ws_tasks:
+                logger.info(f"⚡ דוחף {len(ws_tasks)} התראות לייב לאתר דרך WebSocket...")
+                await asyncio.gather(*ws_tasks, return_exceptions=True)
 
             for alert, res in zip(triggered_alerts, results):
                 if res is True:

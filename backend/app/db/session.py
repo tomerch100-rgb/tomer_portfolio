@@ -6,6 +6,7 @@ from app.db.base_class import Base
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"))
 logger = logging.getLogger(__name__)
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")

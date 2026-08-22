@@ -113,10 +113,13 @@ async def show_portfolio(db: Session, user_id: int):
             "risk_level": getattr(row, "risk_level", None),
             "take_profit": float(row.take_profit) if getattr(row, "take_profit", None) is not None else None,
             "stop_loss": float(row.stop_loss) if getattr(row, "stop_loss", None) is not None else None,
+            "tp_triggered": bool(getattr(row, "tp_triggered", False)),
+            "sl_triggered": bool(getattr(row, "sl_triggered", False)),
             "initial_entry_date": first_buy_dates.get(row.ticker, None),
             "next_earnings_date": None
         }
         stocks_details.append(stock_data)
+
 
     return stocks_details
 
