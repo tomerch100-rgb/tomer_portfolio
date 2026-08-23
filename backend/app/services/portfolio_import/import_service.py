@@ -149,15 +149,19 @@ class PortfolioImportService:
         cleans and normalizes values, enriches missing sectors via Yahoo Finance,
         and atomically upserts positions into the Portfolio database model.
         """
-        # 1. Resolve rows from direct payload or Redis session cache
+        # 1. Resolve rows: prioritize session cache (which contains full dataset)
         resolved_rows: list[dict[str, Any]] = []
-        if rows and len(rows) > 0:
-            resolved_rows = rows
-        elif session_token:
+        if session_token:
             cache_key = f"import_session:{session_token}"
             cached = await get_cached_data(cache_key)
-            if cached and isinstance(cached, list):
+            if cached and isinstance(cached, list) and len(cached) > 0:
                 resolved_rows = cached
+                logger.info(f"Successfully retrieved {len(resolved_rows)} full rows from session cache ({session_token}).")
+
+        # Fallback to direct payload rows if session_token was not provided or expired
+        if not resolved_rows and rows and len(rows) > 0:
+            resolved_rows = rows
+            logger.info(f"Using {len(resolved_rows)} rows provided directly in request payload.")
 
         if not resolved_rows:
             return ImportResultResponse(
@@ -166,7 +170,7 @@ class PortfolioImportService:
                 imported_count=0,
                 updated_count=0,
                 failed_count=0,
-                errors=["No data rows provided or session expired. Please re-upload your file."],
+                errors=["No data rows found in session cache or payload. Please re-upload your file."],
                 items=[]
             )
 

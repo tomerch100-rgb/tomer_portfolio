@@ -36,4 +36,13 @@ class ConnectionManager:
             except Exception as e:
                 logger.error(f"❌ Failed to send WS message to user {user_id}: {e}")
 
+    async def broadcast(self, message: dict):
+        """משדר הודעה לכל המשתמשים והטאבים המחוברים בזמן אמת"""
+        for user_id, user_sockets in list(self.active_connections.items()):
+            for websocket in list(user_sockets):
+                try:
+                    await websocket.send_json(message)
+                except Exception as e:
+                    logger.debug(f"Broadcast WS drop: {e}")
+
 manager = ConnectionManager()

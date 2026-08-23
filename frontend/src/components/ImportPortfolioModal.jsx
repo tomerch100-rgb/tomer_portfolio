@@ -175,7 +175,7 @@ export default function ImportPortfolioModal({ isOpen, onClose, onSuccess }) {
                 cleanMap,
                 previewData?.session_token,
                 overwriteExisting,
-                previewData?.preview_rows
+                null // Pass null so backend uses full dataset from session_token
             );
 
             setImportResult(result);
