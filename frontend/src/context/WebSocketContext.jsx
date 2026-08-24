@@ -13,6 +13,45 @@ export const ConnectionStatus = {
 };
 
 /**
+ * Dynamically resolves the WebSocket URL based on environment variables:
+ * 1. Explicit VITE_WS_URL if set
+ * 2. Derived from VITE_API_URL (https:// -> wss://, http:// -> ws://, appends /ws)
+ * 3. Fallback to ws://localhost:8000/ws
+ * Appends auth token from localStorage if present.
+ */
+export const buildWebSocketUrl = () => {
+    const customWsUrl = import.meta.env.VITE_WS_URL;
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("access_token") ||
+        "";
+    const tokenParam = token ? `token=${encodeURIComponent(token)}` : "";
+
+    let baseWsUrl = "";
+
+    if (customWsUrl && customWsUrl.trim() !== "") {
+        baseWsUrl = customWsUrl.trim();
+    } else if (apiUrl && apiUrl.trim() !== "") {
+        const wsProtocolUrl = apiUrl
+            .trim()
+            .replace(/^http:\/\//i, "ws://")
+            .replace(/^https:\/\//i, "wss://")
+            .replace(/\/+$/, "");
+        baseWsUrl = wsProtocolUrl.endsWith("/ws") ? wsProtocolUrl : `${wsProtocolUrl}/ws`;
+    } else {
+        baseWsUrl = "ws://localhost:8000/ws";
+    }
+
+    if (tokenParam && !baseWsUrl.includes("token=")) {
+        const separator = baseWsUrl.includes("?") ? "&" : "?";
+        return `${baseWsUrl}${separator}${tokenParam}`;
+    }
+
+    return baseWsUrl;
+};
+
+/**
  * WebSocketProvider
  * Global WebSocket connection manager with multi-tab awareness,
  * exponential backoff auto-reconnect, and a decoupled pub/sub event bus.
@@ -143,20 +182,8 @@ export function WebSocketProvider({ children }) {
         );
 
         try {
-            // Build WebSocket URL
-            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-            const defaultWsHost = "localhost:8000";
-            const customWsUrl = import.meta.env.VITE_WS_URL;
-
-            let wsUrl = customWsUrl;
-            if (!wsUrl) {
-                const token =
-                    localStorage.getItem("token") ||
-                    localStorage.getItem("access_token") ||
-                    "";
-                const tokenParam = token ? `?token=${encodeURIComponent(token)}` : "";
-                wsUrl = `${protocol}//${defaultWsHost}/ws${tokenParam}`;
-            }
+            // Build dynamic WebSocket URL
+            const wsUrl = buildWebSocketUrl();
 
             const socket = new WebSocket(wsUrl);
             wsRef.current = socket;

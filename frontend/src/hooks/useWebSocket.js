@@ -1,5 +1,7 @@
 import { useContext, useEffect, useRef } from "react";
-import { WebSocketContext } from "../context/WebSocketContext";
+import { WebSocketContext, buildWebSocketUrl } from "../context/WebSocketContext";
+
+export { buildWebSocketUrl };
 
 /**
  * Hook to access the global WebSocket connection status, methods, and pub/sub system.
