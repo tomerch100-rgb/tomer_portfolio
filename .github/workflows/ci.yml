@@ -1,0 +1,21 @@
+name: Pre-Deployment CI
+
+# מתי להפעיל את האקשן?
+on:
+  push:
+    branches: [ "staging" ] # יופעל בכל פעם שתעשה push לענף הבדיקות
+  pull_request:
+    branches: [ "main" ]    # יופעל גם כשפתחת בקשת מיזוג (PR) מ-staging ל-main
+
+jobs:
+  test-project:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # כאן נשבץ בהמשך את פקודות הבדיקה האמיתיות של הפרויקט שלך
+      - name: Run Sanity Check
+        run: |
+          echo "Running tests on staging branch before Render deployment..."
