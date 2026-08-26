@@ -4,6 +4,7 @@ import useFetchData from "../hooks/useFetchData";
 import {
     History, Search, Loader2, AlertCircle
 } from "lucide-react";
+import ServerWakeupLoader from "../components/ServerWakeupLoader";
 
 function TransactionHistory() {
     const { data: transactions = [], isLoading, error } = useFetchData(transaction_log);
@@ -61,10 +62,12 @@ function TransactionHistory() {
 
                 {/* Table / Content State */}
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-3">
-                        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
-                        <p className="text-zinc-400 text-sm">טוען את היסטוריית העסקאות...</p>
-                    </div>
+                    <ServerWakeupLoader
+                        fullScreen={false}
+                        title="טוען את היסטוריית העסקאות..."
+                        subtitle="מושך פעולות קנייה ומכירה..."
+                        delayThreshold={2500}
+                    />
                 ) : error ? (
                     <div className="bg-rose-950/20 border border-rose-900/50 rounded-2xl p-4 sm:p-6 flex items-start gap-4">
                         <AlertCircle className="w-6 h-6 text-rose-500 flex-shrink-0 mt-0.5" />

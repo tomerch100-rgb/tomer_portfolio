@@ -1,11 +1,12 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { displayPortfolio, getPortfolioHistory, transaction_log, getTransactionsSummary } from '../services/dashbordService';
 import useFetchData from '../hooks/useFetchData';
-import { Loader2, AlertCircle, TrendingUp, PieChart as PieIcon, BarChart3, DollarSign, Activity } from 'lucide-react';
+import { TrendingUp, PieChart as PieIcon, BarChart3, DollarSign, Activity } from 'lucide-react';
+import ServerWakeupLoader from '../components/ServerWakeupLoader';
 
 const formatCurrency = (val) => {
     const num = Number(val);
@@ -24,9 +25,9 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-zinc-900 border border-zinc-700 p-3 rounded-lg shadow-xl" dir="rtl">
-                <p className="text-zinc-400 text-sm mb-1">{label}</p>
-                <p className="text-white font-bold">{formatCurrency(payload[0].value)}</p>
+            <div className="bg-[#121214]/95 border border-zinc-700/80 p-2.5 sm:p-3 rounded-xl shadow-2xl backdrop-blur-xl max-w-[220px]" dir="rtl">
+                <p className="text-zinc-400 text-xs mb-1 font-mono">{label}</p>
+                <p className="text-white font-bold font-mono text-sm sm:text-base" dir="ltr">{formatCurrency(payload[0].value)}</p>
             </div>
         );
     }
@@ -42,9 +43,9 @@ const formatPercent = (val) => {
 const PieTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-zinc-900 border border-zinc-700 p-3 rounded-lg shadow-xl" dir="rtl">
-                <p className="text-white font-medium mb-1">{payload[0].name}</p>
-                <p className="text-zinc-300">{formatCurrency(payload[0].value)}</p>
+            <div className="bg-[#121214]/95 border border-zinc-700/80 p-2.5 sm:p-3 rounded-xl shadow-2xl backdrop-blur-xl max-w-[220px]" dir="rtl">
+                <p className="text-white font-bold text-xs sm:text-sm mb-0.5">{payload[0].name}</p>
+                <p className="text-zinc-300 font-mono text-xs sm:text-sm" dir="ltr">{formatCurrency(payload[0].value)}</p>
             </div>
         );
     }
@@ -63,7 +64,7 @@ function PortfolioAnalytics() {
         if (!portfolioDisplay) return [];
         const sectors = {};
         portfolioDisplay.forEach(item => {
-            const sec = item.sector || 'Unknown';
+            const sec = item.sector || 'Other';
             if (!sectors[sec]) sectors[sec] = 0;
             sectors[sec] += (item.stock_currnet_worth || 0);
         });
@@ -87,9 +88,13 @@ function PortfolioAnalytics() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4" dir="rtl">
-                <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
-                <p className="text-zinc-400 font-medium">מנתח ביצועי תיק...</p>
+            <div className="min-h-[70vh] flex items-center justify-center">
+                <ServerWakeupLoader
+                    fullScreen={false}
+                    title="מנתח ביצועי תיק והיסטוריה..."
+                    subtitle="מעבד תשואות ונתונים פיננסיים..."
+                    delayThreshold={2500}
+                />
             </div>
         );
     }
@@ -132,16 +137,16 @@ function PortfolioAnalytics() {
                 </div>
             )}
 
-            {/* Area Chart */}
-            <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-3xl p-4 sm:p-6 backdrop-blur-xl shadow-xl">
+            {/* Area Chart - Mobile Optimized with w-full min-w-0 and tight margins */}
+            <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-3xl p-4 sm:p-6 backdrop-blur-xl shadow-xl w-full min-w-0 overflow-hidden">
                 <div className="flex items-center gap-2 mb-4 sm:mb-6">
                     <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
                     <h2 className="text-base sm:text-lg font-bold text-white">צמיחת שווי התיק לאורך זמן</h2>
                 </div>
-                <div className="h-[280px] sm:h-[350px] md:h-[400px] w-full" dir="ltr">
+                <div className="w-full min-w-0 h-64 sm:h-80 md:h-96" dir="ltr">
                     {portfolioHistory && portfolioHistory.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={portfolioHistory} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                            <AreaChart data={portfolioHistory} margin={{ top: 10, right: 8, left: -22, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
@@ -149,8 +154,20 @@ function PortfolioAnalytics() {
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                                <XAxis dataKey="date" stroke="#a1a1aa" fontSize={11} tickMargin={8} minTickGap={25} />
-                                <YAxis stroke="#a1a1aa" fontSize={11} tickFormatter={val => `$${val.toLocaleString()}`} />
+                                <XAxis 
+                                    dataKey="date" 
+                                    stroke="#71717a" 
+                                    tick={{ fontSize: 10, fill: '#a1a1aa' }} 
+                                    tickMargin={6} 
+                                    interval="preserveStartEnd" 
+                                    minTickGap={20} 
+                                />
+                                <YAxis 
+                                    stroke="#71717a" 
+                                    tick={{ fontSize: 10, fill: '#a1a1aa' }} 
+                                    tickFormatter={val => `$${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`}
+                                    width={46}
+                                />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorValue)" />
                             </AreaChart>
@@ -161,24 +178,24 @@ function PortfolioAnalytics() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 w-full min-w-0">
                 {/* Sector Allocation */}
-                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-3xl p-4 sm:p-6 backdrop-blur-xl flex flex-col items-center shadow-xl">
+                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-3xl p-4 sm:p-6 backdrop-blur-xl flex flex-col items-center shadow-xl w-full min-w-0 overflow-hidden">
                     <div className="flex items-center gap-2 mb-2 w-full justify-start">
                         <PieIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                         <h2 className="text-base sm:text-lg font-bold text-white">התפלגות לפי סקטורים</h2>
                     </div>
-                    <div className="h-[280px] sm:h-[300px] w-full" dir="ltr">
+                    <div className="w-full min-w-0 h-64 sm:h-72 md:h-80" dir="ltr">
                         {sectorData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
-                                    <Pie data={sectorData} cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={2} dataKey="value">
+                                    <Pie data={sectorData} cx="50%" cy="48%" innerRadius={50} outerRadius={85} paddingAngle={2} dataKey="value">
                                         {sectorData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
                                     <Tooltip content={<PieTooltip />} />
-                                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '6px' }} />
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
@@ -188,16 +205,16 @@ function PortfolioAnalytics() {
                 </div>
 
                 {/* Stock Weight Distribution */}
-                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-3xl p-4 sm:p-6 backdrop-blur-xl flex flex-col items-center shadow-xl">
+                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-3xl p-4 sm:p-6 backdrop-blur-xl flex flex-col items-center shadow-xl w-full min-w-0 overflow-hidden">
                     <div className="flex items-center gap-2 mb-2 w-full justify-start">
                         <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-fuchsia-400" />
                         <h2 className="text-base sm:text-lg font-bold text-white">משקל כל מניה בתיק</h2>
                     </div>
-                    <div className="h-[280px] sm:h-[300px] w-full" dir="ltr">
+                    <div className="w-full min-w-0 h-64 sm:h-72 md:h-80" dir="ltr">
                         {weightData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
-                                    <Pie data={weightData} cx="50%" cy="50%" outerRadius={95} paddingAngle={1} dataKey="value">
+                                    <Pie data={weightData} cx="50%" cy="50%" outerRadius={85} paddingAngle={1} dataKey="value">
                                         {weightData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
                                         ))}

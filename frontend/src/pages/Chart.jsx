@@ -237,7 +237,7 @@ function StockPage() {
                 </div>
 
                 {/* Main Technical Chart Container */}
-                <div className="flex-grow min-h-[480px] sm:min-h-[580px] lg:min-h-[620px]">
+                <div className="w-full min-w-0 flex-grow">
                     <TradingChart
                         symbol={activeSymbol}
                         interval={selectedInterval}

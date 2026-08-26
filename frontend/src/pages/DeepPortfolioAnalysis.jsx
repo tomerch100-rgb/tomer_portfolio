@@ -21,6 +21,7 @@ import {
   TrendingUp,
   TrendingDown
 } from 'lucide-react';
+import ServerWakeupLoader from '../components/ServerWakeupLoader';
 
 const formatCurrency = (val) => {
     const num = Number(val);
@@ -414,9 +415,13 @@ function DeepPortfolioAnalysis() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4" dir="rtl">
-                <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
-                <p className="text-zinc-400 font-medium">טוען ניתוח תיק לעומק...</p>
+            <div className="min-h-[70vh] flex items-center justify-center">
+                <ServerWakeupLoader
+                    fullScreen={false}
+                    title="מבצע ניתוח מעמיק של פוזיציות וניהול סיכונים..."
+                    subtitle="סורק יעדי TP/SL בזמן אמת..."
+                    delayThreshold={2500}
+                />
             </div>
         );
     }

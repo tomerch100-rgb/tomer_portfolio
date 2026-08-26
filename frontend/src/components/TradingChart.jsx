@@ -5,7 +5,7 @@ const TradingChart = ({ symbol = "AAPL", interval = "D", style = "1" }) => {
     const formattedSymbol = symbol.toUpperCase();
 
     return (
-        <div className="w-full h-full min-h-[620px] bg-[#09090b] rounded-2xl overflow-hidden border border-zinc-800/80 shadow-2xl">
+        <div className="w-full min-w-0 h-[380px] sm:h-[500px] md:h-[600px] lg:h-[650px] bg-[#09090b] rounded-2xl sm:rounded-3xl overflow-hidden border border-zinc-800/80 shadow-2xl">
             <AdvancedRealTimeChart
                 symbol={formattedSymbol}
                 interval={interval}
