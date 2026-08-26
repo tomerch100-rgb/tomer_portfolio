@@ -12,6 +12,7 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react";
+import ServerWakeupLoader from "../components/ServerWakeupLoader";
 
 function Dashbord() {
   const user = useSelector((state) => state.auth.user);
@@ -37,6 +38,19 @@ function Dashbord() {
     return `${num >= 0 ? "+" : ""}${num.toFixed(2)}%`;
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <ServerWakeupLoader
+          fullScreen={false}
+          title="טוען נתוני תיק השקעות..."
+          subtitle="מושך נתונים עדכניים מהשרת..."
+          delayThreshold={2500}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 w-full space-y-6" dir="rtl">
@@ -56,12 +70,7 @@ function Dashbord() {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
-            <p className="text-zinc-400 text-sm">טוען נתוני תיק השקעות...</p>
-          </div>
-        ) : hasError ? (
+        {hasError ? (
           <div className="bg-rose-950/20 border border-rose-900/50 rounded-2xl p-4 sm:p-6 flex items-start gap-4">
             <AlertCircle className="w-6 h-6 text-rose-500 flex-shrink-0 mt-0.5" />
             <div>
