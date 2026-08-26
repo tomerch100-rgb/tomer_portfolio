@@ -202,12 +202,12 @@ function Watchlist() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 text-zinc-100 font-sans" dir="rtl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 w-full space-y-6 text-zinc-100 font-sans" dir="rtl">
             {/* Live Alert Toast Banner */}
             {liveAlertToast && (
-                <div className="mb-6 p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.25)] flex items-center justify-between gap-4 animate-bounce">
+                <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.25)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-bounce">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                        <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-shrink-0">
                             <BellRing className="w-5 h-5 animate-pulse" />
                         </div>
                         <div>
@@ -224,7 +224,7 @@ function Watchlist() {
                     </div>
                     <button
                         onClick={() => setLiveAlertToast(null)}
-                        className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-xs font-semibold cursor-pointer"
+                        className="self-end sm:self-center px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-xs font-semibold cursor-pointer"
                     >
                         סגור
                     </button>
@@ -232,19 +232,19 @@ function Watchlist() {
             )}
 
             {/* Top Telegram Connect Banner */}
-            <div className="mb-6">
+            <div>
                 <TelegramConnect />
             </div>
 
             {/* Main Watchlist Layout */}
-            <div className="flex flex-col lg:flex-row gap-8 min-h-[750px]">
+            <div className="flex flex-col lg:flex-row gap-6 md:gap-8 min-h-[750px]">
                 {/* Left/Sidebar Panel: Add Form & Interactive Watchlist Table */}
-                <div className="w-full lg:w-[480px] flex-shrink-0 flex flex-col gap-6">
+                <div className="w-full lg:w-[420px] xl:w-[460px] flex-shrink-0 flex flex-col gap-6">
                     {/* Header */}
-                    <div className="bg-[#121214] border border-zinc-800/80 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+                    <div className="bg-[#121214] border border-zinc-800/80 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col gap-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+                                <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2 text-white">
                                     <Star className="w-5 h-5 text-emerald-500 fill-emerald-500" />
                                     רשימת מעקב והתראות
                                 </h2>
@@ -259,7 +259,7 @@ function Watchlist() {
                     </div>
 
                     {/* Interactive Table View */}
-                    <div className="bg-[#121214] border border-zinc-800/80 rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+                    <div className="bg-[#121214] border border-zinc-800/80 rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col gap-4">
                         <h3 className="text-sm font-bold text-zinc-300 flex items-center gap-2">
                             <Activity className="w-4 h-4 text-emerald-400" />
                             מניות במעקב ({watchlistItems.length})
@@ -278,11 +278,11 @@ function Watchlist() {
 
 
                 {/* Right Panel: Main Fundamental Research Display */}
-                <div className="flex-grow bg-[#121214] border border-zinc-800/80 rounded-3xl p-6 lg:p-8 flex flex-col justify-between shadow-xl">
+                <div className="flex-grow bg-[#121214] border border-zinc-800/80 rounded-3xl p-4 sm:p-6 lg:p-8 flex flex-col justify-between shadow-xl">
                     {isDetailsLoading ? (
                         /* Skeleton Loader */
-                        <div className="space-y-8 animate-pulse">
-                            <div className="flex justify-between items-start">
+                        <div className="space-y-6 sm:space-y-8 animate-pulse">
+                            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                 <div className="space-y-3">
                                     <div className="h-8 w-48 bg-zinc-800 rounded-lg" />
                                     <div className="h-4 w-32 bg-zinc-800/60 rounded" />
@@ -293,9 +293,9 @@ function Watchlist() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                                 {[...Array(8)].map((_, i) => (
-                                    <div key={i} className="h-24 bg-zinc-900 border border-zinc-800/60 rounded-2xl p-4 space-y-2">
+                                    <div key={i} className="h-20 sm:h-24 bg-zinc-900 border border-zinc-800/60 rounded-2xl p-3.5 sm:p-4 space-y-2">
                                         <div className="h-3 w-16 bg-zinc-800 rounded" />
                                         <div className="h-6 w-24 bg-zinc-800/80 rounded" />
                                     </div>
@@ -307,29 +307,29 @@ function Watchlist() {
                             <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4 text-rose-400">
                                 <ShieldCheck className="w-7 h-7" />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">שגיאה בטעינת נתונים פיננסיים</h3>
-                            <p className="text-sm text-zinc-400 max-w-md">{detailsError || stockDetails?.error}</p>
+                            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">שגיאה בטעינת נתונים פיננסיים</h3>
+                            <p className="text-xs sm:text-sm text-zinc-400 max-w-md">{detailsError || stockDetails?.error}</p>
                         </div>
                     ) : stockDetails ? (
-                        <div className="space-y-8">
+                        <div className="space-y-6 sm:space-y-8">
                             {/* Header Banner */}
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/80 pb-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-4 sm:pb-6">
                                 <div>
                                     <div className="flex items-center gap-3">
-                                        <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight font-mono">
+                                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight font-mono">
                                             {stockDetails.ticker}
                                         </h1>
                                         <span className="px-2.5 py-1 bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono rounded-lg">
                                             {stockDetails.exchange || "NASDAQ"}
                                         </span>
                                     </div>
-                                    <h2 className="text-base font-semibold text-zinc-300 mt-1">
+                                    <h2 className="text-sm sm:text-base font-semibold text-zinc-300 mt-1">
                                         {stockDetails.company_name}
                                     </h2>
                                 </div>
 
                                 {/* Price & Day Change & Quick Alert Button */}
-                                <div className="flex items-center gap-4">
+                                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                                     <button
                                         onClick={() => {
                                             const found = watchlistItems.find(
@@ -351,18 +351,18 @@ function Watchlist() {
                                     </button>
 
                                     <div className="text-left font-mono" dir="ltr">
-                                        <div className="text-3xl lg:text-4xl font-extrabold text-white">
+                                        <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white">
                                             {formatCurrency(stockDetails.current_price)}
                                         </div>
                                         <div
-                                            className={`flex items-center gap-1.5 text-sm font-semibold justify-end mt-1 ${
+                                            className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold justify-end mt-0.5 ${
                                                 Number(stockDetails.change) >= 0 ? "text-emerald-400" : "text-rose-400"
                                             }`}
                                         >
                                             {Number(stockDetails.change) >= 0 ? (
-                                                <TrendingUp className="w-4 h-4" />
+                                                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                             ) : (
-                                                <TrendingDown className="w-4 h-4" />
+                                                <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                             )}
                                             <span>{formatCurrency(stockDetails.change)}</span>
                                             <span>({formatPercent(stockDetails.change_percent)})</span>
@@ -373,63 +373,63 @@ function Watchlist() {
 
                             {/* Section 1: Valuation Metrics */}
                             <div>
-                                <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 mb-4 flex items-center gap-2">
+                                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-400 mb-3 sm:mb-4 flex items-center gap-2">
                                     <BarChart2 className="w-4 h-4 text-emerald-500" />
                                     יחסי הערכת שווי (Valuation Metrics)
                                 </h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">שווי שוק</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {formatLargeNumber(stockDetails.market_cap)}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">מכפיל רווח (P/E)</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {stockDetails.pe_ratio ? Number(stockDetails.pe_ratio).toFixed(2) : "N/A"}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">מכפיל עתידי (Forward P/E)</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {stockDetails.forward_pe ? Number(stockDetails.forward_pe).toFixed(2) : "N/A"}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">יחס PEG</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {stockDetails.peg_ratio ? Number(stockDetails.peg_ratio).toFixed(2) : "N/A"}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">מכפיל הון (P/B)</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {stockDetails.price_to_book ? Number(stockDetails.price_to_book).toFixed(2) : "N/A"}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">מכפיל מכירות (P/S)</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {stockDetails.price_to_sales ? Number(stockDetails.price_to_sales).toFixed(2) : "N/A"}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">תשואת דיבידנד</span>
-                                        <div className="text-lg font-bold text-emerald-400 font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-emerald-400 font-mono" dir="ltr">
                                             {formatPercent(stockDetails.dividend_yield, true)}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">תאריך אקס-דיבידנד</span>
-                                        <div className="text-sm font-semibold text-white font-mono">
+                                        <div className="text-xs sm:text-sm font-semibold text-white font-mono" dir="ltr">
                                             {stockDetails.ex_dividend_date || "N/A"}
                                         </div>
                                     </div>
@@ -438,63 +438,63 @@ function Watchlist() {
 
                             {/* Section 2: Financial Health & Profitability */}
                             <div>
-                                <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 mb-4 flex items-center gap-2">
+                                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-400 mb-3 sm:mb-4 flex items-center gap-2">
                                     <Activity className="w-4 h-4 text-emerald-500" />
                                     רווחיות ואיתנות פיננסית (Profitability & Financial Health)
                                 </h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">סך הכנסות (Revenue)</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {formatLargeNumber(stockDetails.total_revenue)}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">רווח נקי (Net Income)</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {formatLargeNumber(stockDetails.net_income)}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">שיעור רווח נקי</span>
-                                        <div className="text-lg font-bold text-emerald-400 font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-emerald-400 font-mono" dir="ltr">
                                             {formatPercent(stockDetails.profit_margins, true)}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">שיעור רווח תפעולי</span>
-                                        <div className="text-lg font-bold text-emerald-400 font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-emerald-400 font-mono" dir="ltr">
                                             {formatPercent(stockDetails.operating_margins, true)}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">תשואה להון (ROE)</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {formatPercent(stockDetails.return_on_equity, true)}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">תשואה לנכסים (ROA)</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {formatPercent(stockDetails.return_on_assets, true)}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">יחס חוב להון (D/E)</span>
-                                        <div className="text-lg font-bold text-white font-mono" dir="ltr">
+                                        <div className="text-base sm:text-lg font-bold text-white font-mono" dir="ltr">
                                             {stockDetails.debt_to_equity ? Number(stockDetails.debt_to_equity).toFixed(2) : "N/A"}
                                         </div>
                                     </div>
 
-                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-1">
+                                    <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3.5 sm:p-4 space-y-1">
                                         <span className="text-xs text-zinc-400">דירוג אנליסטים</span>
-                                        <div className="text-sm font-extrabold text-emerald-400 font-sans">
+                                        <div className="text-xs sm:text-sm font-extrabold text-emerald-400 font-sans">
                                             {translateRecommendation(stockDetails.recommendation)}
                                         </div>
                                     </div>
@@ -502,9 +502,9 @@ function Watchlist() {
                             </div>
 
                             {/* Section 3: 52-Week Range & Analyst Targets */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pt-2">
                                 {/* 52-Week Range Bar */}
-                                <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 space-y-3">
+                                <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 sm:p-5 space-y-3">
                                     <div className="flex justify-between items-center text-xs font-bold text-zinc-400 uppercase tracking-wider">
                                         <span>טווח מסחר 52 שבועות</span>
                                         <span className="font-mono text-zinc-200" dir="ltr">
@@ -536,7 +536,7 @@ function Watchlist() {
                                 </div>
 
                                 {/* Analyst Price Targets */}
-                                <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 space-y-3">
+                                <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 sm:p-5 space-y-3">
                                     <div className="flex justify-between items-center text-xs font-bold text-zinc-400 uppercase tracking-wider">
                                         <span className="flex items-center gap-1.5">
                                             <Target className="w-4 h-4 text-emerald-500" />
@@ -545,23 +545,23 @@ function Watchlist() {
                                     </div>
 
                                     <div className="grid grid-cols-3 gap-2 text-center font-mono" dir="ltr">
-                                        <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/60">
-                                            <div className="text-[11px] text-zinc-500">יעד נמוך</div>
-                                            <div className="text-sm font-bold text-rose-400 mt-0.5">
+                                        <div className="bg-zinc-950/60 p-2 sm:p-2.5 rounded-xl border border-zinc-800/60">
+                                            <div className="text-[10px] sm:text-[11px] text-zinc-500">יעד נמוך</div>
+                                            <div className="text-xs sm:text-sm font-bold text-rose-400 mt-0.5">
                                                 {formatCurrency(stockDetails.target_low)}
                                             </div>
                                         </div>
 
-                                        <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-emerald-500/30">
-                                            <div className="text-[11px] text-zinc-400">יעד ממוצע</div>
-                                            <div className="text-sm font-extrabold text-emerald-400 mt-0.5">
+                                        <div className="bg-zinc-950/60 p-2 sm:p-2.5 rounded-xl border border-emerald-500/30">
+                                            <div className="text-[10px] sm:text-[11px] text-zinc-400">יעד ממוצע</div>
+                                            <div className="text-xs sm:text-sm font-extrabold text-emerald-400 mt-0.5">
                                                 {formatCurrency(stockDetails.target_mean)}
                                             </div>
                                         </div>
 
-                                        <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/60">
-                                            <div className="text-[11px] text-zinc-500">יעד גבוה</div>
-                                            <div className="text-sm font-bold text-emerald-400 mt-0.5">
+                                        <div className="bg-zinc-950/60 p-2 sm:p-2.5 rounded-xl border border-zinc-800/60">
+                                            <div className="text-[10px] sm:text-[11px] text-zinc-500">יעד גבוה</div>
+                                            <div className="text-xs sm:text-sm font-bold text-emerald-400 mt-0.5">
                                                 {formatCurrency(stockDetails.target_high)}
                                             </div>
                                         </div>
@@ -572,8 +572,8 @@ function Watchlist() {
                     ) : (
                         <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
                             <Star className="w-12 h-12 text-zinc-600 mb-4 animate-pulse" />
-                            <h3 className="text-xl font-bold text-white mb-2">בחר מניה מהרשימה</h3>
-                            <p className="text-sm text-zinc-400 max-w-md">
+                            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">בחר מניה מהרשימה</h3>
+                            <p className="text-xs sm:text-sm text-zinc-400 max-w-md">
                                 בחר מניה מהרשימה או הוסף מניה חדשה לצפייה במחקר הפונדמנטלי המקיף.
                             </p>
                         </div>
