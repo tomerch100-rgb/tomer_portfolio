@@ -433,11 +433,11 @@ function DeepPortfolioAnalysis() {
     }
 
     return (
-        <div className="p-6 max-w-[1600px] mx-auto space-y-6" dir="rtl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 w-full space-y-6" dir="rtl">
             {/* Live Portfolio Alert Toast Banner */}
             {livePortfolioToast && (
                 <div
-                    className={`p-4 rounded-2xl border shadow-xl flex items-center justify-between gap-4 animate-bounce transition-all duration-300 ${
+                    className={`p-4 rounded-2xl border shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-bounce transition-all duration-300 ${
                         livePortfolioToast.alertType === "TAKE_PROFIT"
                             ? "bg-emerald-950/80 border-emerald-500/50 text-emerald-200 shadow-[0_0_30px_rgba(16,185,129,0.25)]"
                             : "bg-rose-950/80 border-rose-500/50 text-rose-200 shadow-[0_0_30px_rgba(244,63,94,0.25)]"
@@ -458,8 +458,8 @@ function DeepPortfolioAnalysis() {
                             )}
                         </div>
                         <div>
-                            <div className="text-xs font-mono font-bold flex items-center gap-2">
-                                <span className="text-white text-sm">
+                            <div className="text-xs font-mono font-bold flex flex-wrap items-center gap-2">
+                                <span className="text-white text-xs sm:text-sm">
                                     {livePortfolioToast.alertType === "TAKE_PROFIT"
                                         ? "🎯 התראת יעד רווח (Take Profit) הופעלה!"
                                         : "🛑 התראת הגבלת הפסד (Stop Loss) הופעלה!"}
@@ -474,15 +474,15 @@ function DeepPortfolioAnalysis() {
                                     {livePortfolioToast.ticker}
                                 </span>
                             </div>
-                            <p className="text-xs mt-1 opacity-90">
-                                {livePortfolioToast.message} (מחיר נוכחי: ${Number(livePortfolioToast.currentPrice).toFixed(2)})
+                            <p className="text-xs mt-1 opacity-90" dir="rtl">
+                                {livePortfolioToast.message} (מחיר נוכחי: <span dir="ltr">${Number(livePortfolioToast.currentPrice).toFixed(2)}</span>)
                             </p>
                         </div>
                     </div>
 
                     <button
                         onClick={() => setLivePortfolioToast(null)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`self-end sm:self-center px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                             livePortfolioToast.alertType === "TAKE_PROFIT"
                                 ? "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200"
                                 : "bg-rose-500/20 hover:bg-rose-500/30 text-rose-200"
@@ -493,63 +493,63 @@ function DeepPortfolioAnalysis() {
                 </div>
             )}
 
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-800/60 pb-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1.5 flex flex-wrap items-center gap-2">
                         <span>ניתוח תיק לעומק</span>
                         <span className="text-xs font-mono font-normal bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                            התראות TP/SL פעילות בזמן אמת
+                            התראות TP/SL בזמן אמת
                         </span>
                     </h1>
-                    <p className="text-zinc-400 text-sm">
+                    <p className="text-zinc-400 text-xs sm:text-sm max-w-3xl">
                         הגדר מחירי Take Profit ו-Stop Loss לכל פוזיציה בתיק – המערכת סורקת את השוק ברקע ושולחת התראות בזמן אמת לטלגרם ולדפדפן ברגע שהמחיר מגיע ליעד!
                     </p>
                 </div>
             </div>
             
             {/* KPI Summary Header */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 backdrop-blur-xl flex flex-col justify-center">
-                    <span className="text-zinc-400 text-sm mb-1">רווח / הפסד לא ממומש</span>
-                    <div className="flex items-baseline gap-2">
-                        <span className={`text-2xl font-bold font-mono ${unrealizedPL > 0 ? 'text-emerald-400' : unrealizedPL < 0 ? 'text-rose-400' : 'text-zinc-100'}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 sm:p-5 md:p-6 backdrop-blur-xl flex flex-col justify-center">
+                    <span className="text-zinc-400 text-xs sm:text-sm mb-1.5">רווח / הפסד לא ממומש</span>
+                    <div className="flex items-baseline gap-2" dir="ltr">
+                        <span className={`text-xl sm:text-2xl md:text-3xl font-bold font-mono ${unrealizedPL > 0 ? 'text-emerald-400' : unrealizedPL < 0 ? 'text-rose-400' : 'text-zinc-100'}`}>
                             {unrealizedPL > 0 ? '+' : ''}{formatCurrency(unrealizedPL)}
                         </span>
-                        <span className={`text-sm font-medium font-mono ${unrealizedPLPercent > 0 ? 'text-emerald-400/80' : unrealizedPLPercent < 0 ? 'text-rose-400/80' : 'text-zinc-500'}`}>
+                        <span className={`text-xs sm:text-sm font-medium font-mono ${unrealizedPLPercent > 0 ? 'text-emerald-400/80' : unrealizedPLPercent < 0 ? 'text-rose-400/80' : 'text-zinc-500'}`}>
                             ({unrealizedPLPercent > 0 ? '+' : ''}{unrealizedPLPercent.toFixed(2)}%)
                         </span>
                     </div>
                 </div>
-                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 backdrop-blur-xl flex flex-col justify-center">
-                    <span className="text-zinc-400 text-sm mb-1">עלות השקעה כוללת</span>
-                    <span className="text-2xl font-bold text-white font-mono">{formatCurrency(totalCostBasis)}</span>
+                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 sm:p-5 md:p-6 backdrop-blur-xl flex flex-col justify-center">
+                    <span className="text-zinc-400 text-xs sm:text-sm mb-1.5">עלות השקעה כוללת</span>
+                    <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white font-mono" dir="ltr">{formatCurrency(totalCostBasis)}</span>
                 </div>
-                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 backdrop-blur-xl flex flex-col justify-center">
-                    <span className="text-zinc-400 text-sm mb-1">שווי שוק נוכחי</span>
-                    <span className="text-2xl font-bold text-white font-mono">{formatCurrency(totalCurrentWorth)}</span>
+                <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 sm:p-5 md:p-6 backdrop-blur-xl flex flex-col justify-center sm:col-span-2 lg:col-span-1">
+                    <span className="text-zinc-400 text-xs sm:text-sm mb-1.5">שווי שוק נוכחי</span>
+                    <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white font-mono" dir="ltr">{formatCurrency(totalCurrentWorth)}</span>
                 </div>
             </div>
 
-            <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl overflow-hidden backdrop-blur-xl">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-right border-collapse">
+            <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-3xl overflow-hidden backdrop-blur-xl shadow-xl">
+                <div className="overflow-x-auto w-full">
+                    <table className="w-full text-right border-collapse min-w-[720px]">
                         <thead>
                             {table.getHeaderGroups().map(headerGroup => (
                                 <tr key={headerGroup.id} className="border-b border-zinc-800/80 bg-zinc-950/40 text-zinc-400 text-xs font-semibold uppercase tracking-wider">
                                     {headerGroup.headers.map(header => (
-                                        <th key={header.id} className="py-3 px-4 whitespace-nowrap">
+                                        <th key={header.id} className="py-3 px-3.5 sm:px-4 whitespace-nowrap">
                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                         </th>
                                     ))}
                                 </tr>
                             ))}
                         </thead>
-                        <tbody className="divide-y divide-zinc-800/40 text-sm">
+                        <tbody className="divide-y divide-zinc-800/40 text-xs sm:text-sm">
                             {table.getRowModel().rows.map(row => (
                                 <tr key={row.id} className="hover:bg-zinc-800/20 transition-colors">
                                     {row.getVisibleCells().map(cell => (
-                                        <td key={cell.id} className="py-3 px-4 whitespace-nowrap">
+                                        <td key={cell.id} className="py-3 px-3.5 sm:px-4 whitespace-nowrap">
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </td>
                                     ))}
@@ -557,7 +557,7 @@ function DeepPortfolioAnalysis() {
                             ))}
                             {table.getRowModel().rows.length === 0 && (
                                 <tr>
-                                    <td colSpan={columns.length} className="text-center py-8 text-zinc-500">
+                                    <td colSpan={columns.length} className="text-center py-12 text-zinc-500 text-xs sm:text-sm">
                                         אין פוזיציות בתיק להצגה.
                                     </td>
                                 </tr>

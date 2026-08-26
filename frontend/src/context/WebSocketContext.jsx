@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, useCallback } f
 import { useSelector, useDispatch } from "react-redux";
 import { loginSuccess } from "../store/authSlice";
 import { playAlertSound } from "../utils/audioAlert";
+import { getWsBaseUrl } from "../services/api";
 
 export const WebSocketContext = createContext(null);
 
@@ -13,35 +14,18 @@ export const ConnectionStatus = {
 };
 
 /**
- * Dynamically resolves the WebSocket URL based on environment variables:
- * 1. Explicit VITE_WS_URL if set
- * 2. Derived from VITE_API_URL (https:// -> wss://, http:// -> ws://, appends /ws)
- * 3. Fallback to ws://localhost:8000/ws
+ * Dynamically resolves the WebSocket URL based on runtime environment:
+ * - Localhost / Local IP: ws://localhost:8000/ws
+ * - Production: wss://tomer-portfolio-6x64.onrender.com/ws
  * Appends auth token from localStorage if present.
  */
 export const buildWebSocketUrl = () => {
-    const customWsUrl = import.meta.env.VITE_WS_URL;
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const baseWsUrl = getWsBaseUrl();
     const token =
         localStorage.getItem("token") ||
         localStorage.getItem("access_token") ||
         "";
     const tokenParam = token ? `token=${encodeURIComponent(token)}` : "";
-
-    let baseWsUrl = "";
-
-    if (customWsUrl && customWsUrl.trim() !== "") {
-        baseWsUrl = customWsUrl.trim();
-    } else if (apiUrl && apiUrl.trim() !== "") {
-        const wsProtocolUrl = apiUrl
-            .trim()
-            .replace(/^http:\/\//i, "ws://")
-            .replace(/^https:\/\//i, "wss://")
-            .replace(/\/+$/, "");
-        baseWsUrl = wsProtocolUrl.endsWith("/ws") ? wsProtocolUrl : `${wsProtocolUrl}/ws`;
-    } else {
-        baseWsUrl = "ws://localhost:8000/ws";
-    }
 
     if (tokenParam && !baseWsUrl.includes("token=")) {
         const separator = baseWsUrl.includes("?") ? "&" : "?";
