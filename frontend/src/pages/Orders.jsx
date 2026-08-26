@@ -96,8 +96,7 @@ function Orders() {
                     <h2 className="text-zinc-400 font-semibold tracking-wide uppercase text-xs sm:text-sm mb-1">
                         מזומן זמין למסחר
                     </h2>
-                    <div className="flex items-center gap-2 text-2xl sm:text-3xl md:text-4xl font-bold text-emerald-400 font-mono" dir="ltr">
-                        <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-emerald-400 font-mono" dir="ltr">
                         <span>{isLoadingSummary ? "..." : formatCurrency(summary.available_cash)}</span>
                     </div>
                 </div>

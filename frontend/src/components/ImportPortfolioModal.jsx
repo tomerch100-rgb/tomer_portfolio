@@ -45,7 +45,23 @@ export default function ImportPortfolioModal({ isOpen, onClose, onSuccess }) {
 
     const fileInputRef = useRef(null);
 
-    if (!isOpen) return null;
+    // Check which required fields are mapped (Hook declared unconditionally at top level)
+    const mappingValidation = useMemo(() => {
+        const mappedTargets = Object.values(columnMapping).filter(Boolean);
+        const hasTicker = mappedTargets.includes("ticker");
+        const hasShares = mappedTargets.includes("shares");
+        const hasAvgPrice = mappedTargets.includes("avg_price");
+
+        const missing = [];
+        if (!hasTicker) missing.push("סמל מניה (Ticker)");
+        if (!hasShares) missing.push("כמות מניות (Shares)");
+        if (!hasAvgPrice) missing.push("מחיר ממוצע (Avg Price)");
+
+        return {
+            isValid: hasTicker && hasShares && hasAvgPrice,
+            missing
+        };
+    }, [columnMapping]);
 
     const resetState = () => {
         setStep(1);
@@ -139,24 +155,6 @@ export default function ImportPortfolioModal({ isOpen, onClose, onSuccess }) {
         }));
     };
 
-    // Check which required fields are mapped
-    const mappingValidation = useMemo(() => {
-        const mappedTargets = Object.values(columnMapping).filter(Boolean);
-        const hasTicker = mappedTargets.includes("ticker");
-        const hasShares = mappedTargets.includes("shares");
-        const hasAvgPrice = mappedTargets.includes("avg_price");
-
-        const missing = [];
-        if (!hasTicker) missing.push("סמל מניה (Ticker)");
-        if (!hasShares) missing.push("כמות מניות (Shares)");
-        if (!hasAvgPrice) missing.push("מחיר ממוצע (Avg Price)");
-
-        return {
-            isValid: hasTicker && hasShares && hasAvgPrice,
-            missing
-        };
-    }, [columnMapping]);
-
     // --- Step 2: Confirm & Import ---
     const handleConfirmImport = async () => {
         if (!mappingValidation.isValid) return;
@@ -197,6 +195,9 @@ export default function ImportPortfolioModal({ isOpen, onClose, onSuccess }) {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
     };
+
+    // Early return only after all hooks are declared and executed unconditionally
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto" dir="rtl">

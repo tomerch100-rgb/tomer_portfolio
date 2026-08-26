@@ -1,23 +1,26 @@
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import { registerCheck } from "../services/authService";
-import { useNavigate } from "react-router-dom";
+import { registerCheck, login } from "../services/authService";
+import { useNavigate, Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../store/authSlice";
 import Btn from "../components/Btn";
-import { TrendingUp, User, Lock, Mail, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import { TrendingUp, User, Lock, Mail, Eye, EyeOff, AlertCircle, Loader2, ArrowRight } from "lucide-react";
 
 function RegisterForm() {
     const [show, setshow] = useState(false);
     const [authError, setAuthError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
     const showPassword = () => {
         setshow(!show);
     };
 
-    const navigate = useNavigate();
-
     const newUser = () => {
-        navigate("/");
+        navigate("/login");
     };
 
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -27,21 +30,32 @@ function RegisterForm() {
         setAuthError("");
 
         try {
-            const response = await registerCheck(data);
-            console.log("תשובת הרשמה:", response);
+            const regResponse = await registerCheck(data);
+            console.log("תשובת הרשמה:", regResponse);
 
-            if (typeof response === "string" && response.includes("Username already exists")) {
+            if (typeof regResponse === "string" && regResponse.includes("Username already exists")) {
                 setAuthError("שם המשתמש כבר קיים במערכת. נא לבחור שם משתמש אחר.");
                 return;
             }
 
-            navigate('/', {
+            // Auto-login immediately after registration with the provided credentials
+            const loginResponse = await login({
+                username: data.username,
+                password: data.password,
+            });
+
+            if (loginResponse?.access_token) {
+                localStorage.setItem("access_token", loginResponse.access_token);
+            }
+
+            dispatch(loginSuccess(loginResponse));
+            navigate('/dashbord', {
                 replace: true,
-                state: { message: "נרשמת בהצלחה! התחבר כעת למערכת." }
+                state: { message: "נרשמת והתחברת בהצלחה!" }
             });
 
         } catch (error) {
-            console.error("ההרשמה נכשלה:", error);
+            console.error("ההרשמה או ההתחברות האוטומטית נכשלה:", error);
             const detail = error.response?.data?.detail;
             if (!error.response) {
                 setAuthError("שגיאת תקשורת: השרת אינו מגיב.");
@@ -55,7 +69,18 @@ function RegisterForm() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 flex items-center justify-center p-4 selection:bg-emerald-500/30 selection:text-emerald-400">
-            <div className="w-full max-w-md bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-8 shadow-2xl shadow-black/40">
+            <div className="w-full max-w-md bg-zinc-900/40 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/40">
+
+                {/* Back to Home Navigation */}
+                <div className="mb-6 flex justify-start" dir="rtl">
+                    <Link
+                        to="/"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-xs sm:text-sm font-medium text-zinc-400 hover:text-white transition-all duration-200 group shadow-sm cursor-pointer"
+                    >
+                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-emerald-400 transition-transform group-hover:translate-x-0.5" />
+                        <span>חזרה לדף הבית</span>
+                    </Link>
+                </div>
 
                 {/* Brand Header */}
                 <div className="flex flex-col items-center mb-8">
@@ -144,8 +169,8 @@ function RegisterForm() {
                                     },
                                     validate: {
                                         hasLettersAndNumbers: (value) =>
-                                            /^(?=.*[A-Za-z])(?=.*\d)/.test(value) ||
-                                            "Password must include both letters and numbers"
+                                            (/[a-zA-Z]/.test(value) && /\d/.test(value)) ||
+                                            "הסיסמה חייבת לכלול לפחות אות אחת ומספר אחד"
                                     }
                                 })}
                                 type={show ? "text" : "password"}
