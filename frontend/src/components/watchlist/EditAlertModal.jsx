@@ -7,13 +7,11 @@ import { updateWatchlistAlert } from "../../services/watchlistService";
  * Modal to view, edit, or clear price alerts for a watchlist item with auto-direction and auto-reset.
  */
 function EditAlertModal({ isOpen, onClose, item, onAlertUpdated }) {
-    if (!isOpen || !item) return null;
-
-    const ticker = item.ticker || "";
-    const currentPrice = Number(item.current_price) || 0;
-    const initialTarget = item.target_price !== null && item.target_price !== undefined ? String(item.target_price) : "";
-    const isCurrentlyTriggered = Boolean(item.alert_triggered);
-    const hasExistingAlert = item.target_price !== null && item.target_price !== undefined;
+    const ticker = item?.ticker || "";
+    const currentPrice = Number(item?.current_price) || 0;
+    const initialTarget = item?.target_price !== null && item?.target_price !== undefined ? String(item.target_price) : "";
+    const isCurrentlyTriggered = Boolean(item?.alert_triggered);
+    const hasExistingAlert = item?.target_price !== null && item?.target_price !== undefined;
 
     const [targetPriceInput, setTargetPriceInput] = useState(initialTarget);
     const [isSaving, setIsSaving] = useState(false);
@@ -26,7 +24,7 @@ function EditAlertModal({ isOpen, onClose, item, onAlertUpdated }) {
         setTargetPriceInput(initialTarget);
         setErrorMsg("");
         setSuccessMsg("");
-    }, [item]);
+    }, [item, initialTarget]);
 
     // Recalculate alert direction dynamically against current price
     const newAlertDirection = useMemo(() => {
@@ -43,6 +41,9 @@ function EditAlertModal({ isOpen, onClose, item, onAlertUpdated }) {
         if (isNaN(numTarget) || !currentPrice) return null;
         return (((numTarget - currentPrice) / currentPrice) * 100).toFixed(2);
     }, [targetPriceInput, currentPrice]);
+
+    // Early return only after all hooks are executed unconditionally
+    if (!isOpen || !item) return null;
 
     // Save or update alert
     const handleSaveAlert = async (e) => {
