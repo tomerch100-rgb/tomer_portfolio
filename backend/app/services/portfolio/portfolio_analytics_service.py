@@ -1,5 +1,7 @@
 import asyncio
+
 from app.services.stock_service import get_analysis_data, get_prices_from_alpaca
+
 
 async def stock_analysis(spec_stock: str):
     spec_stock = spec_stock.upper().strip()
@@ -16,15 +18,16 @@ async def stock_analysis(spec_stock: str):
     except Exception:
         return "The stock does not exist or there was an error fetching data."
 
+
 async def get_stock_details(stock: str):
     stock = stock.upper().strip()
     try:
         # Fetch analysis data and prices concurrently
         analysis_task = get_analysis_data(stock)
         prices_task = get_prices_from_alpaca(stock)
-        
+
         results = await asyncio.gather(analysis_task, prices_task, return_exceptions=True)
-        
+
         analysis = results[0] if isinstance(results[0], dict) else {}
         prices = results[1] if isinstance(results[1], dict) else None
 
@@ -34,16 +37,16 @@ async def get_stock_details(stock: str):
         else:
             last_price = None
             prev_close = None
-        
+
         if last_price is None and prev_close is not None:
             last_price = prev_close
-            
+
         change = 0.0
         change_percent = 0.0
         if last_price is not None and prev_close is not None and prev_close != 0:
             change = last_price - prev_close
             change_percent = (change / prev_close) * 100
-            
+
         return {
             "ticker": stock,
             "company_name": analysis.get("company_name", stock),
@@ -74,7 +77,7 @@ async def get_stock_details(stock: str):
             "target_mean": analysis.get("targetMean"),
             "recommendation": analysis.get("recommendationKey", "N/A"),
             "recommendation_mean": analysis.get("recommendationMean"),
-            "graph_data": analysis.get("graph_data", [])
+            "graph_data": analysis.get("graph_data", []),
         }
     except Exception as e:
         return {"error": str(e)}

@@ -43,6 +43,7 @@ function Navbar() {
         { to: "/dashbord", label: "דאשבורד" },
         { to: "/deep-analysis", label: "ניתוח תיק לעומק" },
         { to: "/analytics", label: "ביצועים ואנליזה" },
+        { to: "/ai-research", label: "מחקר AI 🤖" },
         { to: "/orders", label: "פקודות מסחר" },
         { to: "/history", label: "היסטוריית פעולות" },
         { to: "/watchlist/AAPL", label: "רשימת מעקב" },

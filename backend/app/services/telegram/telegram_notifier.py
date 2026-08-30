@@ -1,10 +1,13 @@
 import logging
+
+from app.models.user import User
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.models.user import User 
+
 from .telegram_service import bot
 
 logger = logging.getLogger(__name__)
+
 
 async def send_telegram_alert(db: Session, user_id: int, message: str) -> bool:
     """
@@ -19,11 +22,15 @@ async def send_telegram_alert(db: Session, user_id: int, message: str) -> bool:
             logger.warning(f"⚠️ Cannot send alert: User {user_id} has no linked telegram_id.")
             return False
 
+        if not bot:
+            logger.warning("⚠️ Cannot send alert: Telegram bot is not initialized (testing mode or missing token).")
+            return False
+
         await bot.send_message(chat_id=user.telegram_id, text=message, parse_mode="Markdown")
-        
+
         logger.info(f"✅ Alert successfully sent to user {user_id} (Telegram ID: {user.telegram_id})")
         return True
 
     except Exception as e:
-        logger.error(f"❌ Failed to send Telegram alert to user {user_id}: {e}", exc_info=True)
+        logger.exception(f"❌ Failed to send Telegram alert to user {user_id}: {e}")
         return False

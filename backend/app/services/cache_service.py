@@ -1,9 +1,10 @@
-import os
 import json
-import time
 import logging
+import os
 import threading
-from typing import Any, Optional
+import time
+from typing import Any
+
 from dotenv import load_dotenv
 
 # Try importing redis.asyncio gracefully
@@ -45,6 +46,7 @@ except ImportError:
             except KeyError:
                 return default
 
+
 load_dotenv()
 logger = logging.getLogger(__name__)
 
@@ -62,7 +64,8 @@ if REDIS_URL and redis is not None:
 _l1_lock = threading.Lock()
 _l1_cache = TTLCache(maxsize=2000, ttl=300)
 
-async def get_cached_data(key: str) -> Optional[Any]:
+
+async def get_cached_data(key: str) -> Any | None:
     """
     Two-tier cache lookup:
     1. Check bounded thread-safe in-memory L1 cache (sub-millisecond, zero network latency).
@@ -89,6 +92,7 @@ async def get_cached_data(key: str) -> Optional[Any]:
 
     return None
 
+
 async def set_cached_data(key: str, data: Any, ttl_seconds: int = 300) -> None:
     """
     Save data to bounded L1 in-memory cache and L2 Redis cache.
@@ -104,6 +108,7 @@ async def set_cached_data(key: str, data: Any, ttl_seconds: int = 300) -> None:
             await redis_client.set(name=key, value=json_data, ex=ttl_seconds)
         except Exception as e:
             logger.debug(f"Redis SET Error for {key}: {e}")
+
 
 async def delete_cached_data(key: str) -> None:
     """

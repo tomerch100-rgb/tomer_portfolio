@@ -1,21 +1,131 @@
-name: Pre-Deployment CI
+name: Pre-Deployment Full CI
 
-# מתי להפעיל את האקשן?
 on:
   push:
-    branches: [ "staging" ] # יופעל בכל פעם שתעשה push לענף הבדיקות
+    branches:
+      - '**' # מאזין לכל בראנץ' כדי להריץ את ה-Pytest
   pull_request:
-    branches: [ "main" ]    # יופעל גם כשפתחת בקשת מיזוג (PR) מ-staging ל-main
+    branches:
+      - main
+      - staging
 
 jobs:
-  test-project:
+  # 1. בדיקת סגנון ואבטחה ל-Backend (רץ תמיד)
+  backend-lint-and-security:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # כאן נשבץ בהמשך את פקודות הבדיקה האמיתיות של הפרויקט שלך
-      - name: Run Sanity Check
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' # עודכן לגרסה המקומית שלך
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt # מותאם למבנה ה-backend
+      - name: Install Lint & Security Tools
         run: |
-          echo "Running tests on staging branch before Render deployment..."
+          pip install ruff pip-audit bandit
+      - name: Run Linter (Ruff)
+        run: ruff check backend/
+      - name: Check Vulnerable Dependencies
+        run: pip-audit -r backend/requirements.txt
+      - name: Run Security Analysis (Bandit)
+        run: bandit -r backend/app/ -ll
+
+  # 2. הרצת הבדיקות האוטומטיות (Pytest - רץ תמיד)
+  backend-tests:
+    needs: backend-lint-and-security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' # עודכן לגרסה המקומית שלך
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+      - name: Install Dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install pytest pytest-asyncio pytest-cov httpx playwright anyio pillow openpyxl pydantic
+      - name: Run Pytest
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
+          SECRET_KEY: "ci-secret-key"
+          ALGORITHM: "HS256"
+          ENVIRONMENT: "testing"
+        # פוצל לשתי שורות נפרדות כדי למנוע התנגשויות בזיכרון וב-DB!
+        run: |
+          pytest tests/unit tests/integration -v --cov=backend/app --cov-report=term-missing --cov-fail-under=70
+
+  # 3. אימות קומפילציה של הפרונטאנד (רץ תמיד)
+  frontend-build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install & Build Frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+
+  # 4. בדיקות קצה-לקצה בדפדפן (Playwright - רץ *רק* ב-staging וב-main)
+  e2e-playwright-tests:
+    needs: [backend-tests, frontend-build-check]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+      
+      # מוסיפים התקנה של Node כדי שנוכל להריץ את הפרונטאנד
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install Python Dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install pytest pytest-playwright pytest-asyncio anyio pillow openpyxl pydantic    
+          
+      - name: Install Node Dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: playwright install --with-deps chromium
+      
+      # מדליקים את השרת ברקע (הסימן & בסוף משאיר אותו לעבוד ברקע)
+      - name: Start Frontend Dev Server
+        working-directory: ./frontend
+        run: npm run dev &
+        
+      # מחכים עד 30 שניות לוודא שהשרת אכן באוויר ומוכן לקבל בקשות
+      - name: Wait for Server to Start
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:5173 > /dev/null; then
+              echo "Server is ready"
+              exit 0
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 1
+          done
+          echo "Server failed to start"
+          exit 1    
+          
+      - name: Run Playwright E2E Tests
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
+          SECRET_KEY: "ci-secret-key"
+          ALGORITHM: "HS256"
+        run: pytest tests/e2e -v

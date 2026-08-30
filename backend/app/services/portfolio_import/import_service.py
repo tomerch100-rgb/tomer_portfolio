@@ -1,27 +1,32 @@
+import asyncio
+import logging
 import re
 import uuid
-import logging
-import asyncio
-from typing import Any, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import select
+from typing import Any
 
-from app.schemas.import_schema import (
-    ImportPreviewResponse,
-    ImportResultResponse,
-    ImportItemResult,
-)
 from app.models.portfolio import Portfolio
 from app.models.transaction import Transaction
-from app.services.cache_service import get_cached_data, set_cached_data, delete_cached_data
+from app.schemas.import_schema import (
+    ImportItemResult,
+    ImportPreviewResponse,
+    ImportResultResponse,
+)
+from app.services.cache_service import (
+    delete_cached_data,
+    get_cached_data,
+    set_cached_data,
+)
 from app.services.stock_service import get_sector_from_yfinance
-from .excel_parser import excel_parser, ExcelParserError
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from .ai_column_mapper import ai_column_mapper
+from .excel_parser import excel_parser
 
 logger = logging.getLogger(__name__)
 
 
-def _clean_ticker(raw_val: Any) -> Optional[str]:
+def _clean_ticker(raw_val: Any) -> str | None:
     """
     Cleans raw ticker string by stripping whitespace, converting to uppercase,
     and trimming common brokerage prefixes/suffixes (e.g. 'NASDAQ:AAPL' -> 'AAPL', 'AAPL.US' -> 'AAPL').
@@ -37,19 +42,18 @@ def _clean_ticker(raw_val: Any) -> Optional[str]:
         val_str = val_str.split(":")[-1].strip()
 
     # Remove common country/currency suffixes like ".US" (while preserving valid dotted tickers like BRK.B or TEVA.TA)
-    if val_str.endswith(".US"):
-        val_str = val_str[:-3]
+    val_str = val_str.removesuffix(".US")
 
     # Clean any quotes or extraneous symbols
-    val_str = re.sub(r'[\'\"`]', '', val_str).strip()
+    val_str = re.sub(r"[\'\"`]", "", val_str).strip()
 
     # Validate ticker contains reasonable characters (letters, numbers, dot, hyphen)
-    if re.match(r'^[A-Z0-9.\-]{1,12}$', val_str):
+    if re.match(r"^[A-Z0-9.\-]{1,12}$", val_str):
         return val_str
     return None
 
 
-def _clean_numeric(raw_val: Any) -> Optional[float]:
+def _clean_numeric(raw_val: Any) -> float | None:
     """
     Cleans strings with currency symbols ($ , ₪ , € , £), commas (1,234.56), percentages,
     or parentheses ((100.0) -> -100.0) and converts to float.
@@ -70,7 +74,7 @@ def _clean_numeric(raw_val: Any) -> Optional[float]:
         s = s[1:-1]
 
     # Remove currency symbols, commas, spaces, percentage signs
-    cleaned = re.sub(r'[$,₪€£\s%]', '', s).replace(',', '')
+    cleaned = re.sub(r"[$,₪€£\s%]", "", s).replace(",", "")
 
     try:
         val = float(cleaned)
@@ -118,10 +122,14 @@ class PortfolioImportService:
         if "shares" not in mapped_targets:
             warnings.append("⚠️ Missing required field: 'shares' (Quantity). Please select the correct column.")
         if "avg_price" not in mapped_targets:
-            warnings.append("⚠️ Missing required field: 'avg_price' (Average purchase cost). Please select the correct column.")
+            warnings.append(
+                "⚠️ Missing required field: 'avg_price' (Average purchase cost). Please select the correct column."
+            )
 
         if confidence < 0.70:
-            warnings.append("ℹ️ Some column headers had lower matching confidence. Please review the suggested mapping carefully.")
+            warnings.append(
+                "ℹ️ Some column headers had lower matching confidence. Please review the suggested mapping carefully."
+            )
 
         return ImportPreviewResponse(
             filename=filename,
@@ -132,17 +140,17 @@ class PortfolioImportService:
             preview_rows=preview_rows,
             total_rows=total_rows,
             session_token=session_token,
-            warnings=warnings
+            warnings=warnings,
         )
 
     async def confirm_and_bulk_import(
         self,
         db: Session,
         user_id: int,
-        mapping: dict[str, Optional[str]],
-        rows: Optional[list[dict[str, Any]]] = None,
-        session_token: Optional[str] = None,
-        overwrite_existing: bool = True
+        mapping: dict[str, str | None],
+        rows: list[dict[str, Any]] | None = None,
+        session_token: str | None = None,
+        overwrite_existing: bool = True,
     ) -> ImportResultResponse:
         """
         Validates user-confirmed column mapping, retrieves raw rows (from payload or session cache),
@@ -156,7 +164,9 @@ class PortfolioImportService:
             cached = await get_cached_data(cache_key)
             if cached and isinstance(cached, list) and len(cached) > 0:
                 resolved_rows = cached
-                logger.info(f"Successfully retrieved {len(resolved_rows)} full rows from session cache ({session_token}).")
+                logger.info(
+                    f"Successfully retrieved {len(resolved_rows)} full rows from session cache ({session_token})."
+                )
 
         # Fallback to direct payload rows if session_token was not provided or expired
         if not resolved_rows and rows and len(rows) > 0:
@@ -171,7 +181,7 @@ class PortfolioImportService:
                 updated_count=0,
                 failed_count=0,
                 errors=["No data rows found in session cache or payload. Please re-upload your file."],
-                items=[]
+                items=[],
             )
 
         # 2. Invert mapping to find user header for each target field
@@ -190,8 +200,10 @@ class PortfolioImportService:
                 imported_count=0,
                 updated_count=0,
                 failed_count=len(resolved_rows),
-                errors=[f"Cannot proceed with import. Missing mapping for required fields: {', '.join(missing_required)}"],
-                items=[]
+                errors=[
+                    f"Cannot proceed with import. Missing mapping for required fields: {', '.join(missing_required)}"
+                ],
+                items=[],
             )
 
         ticker_col = target_to_col["ticker"]
@@ -213,13 +225,11 @@ class PortfolioImportService:
             if not ticker:
                 err_msg = f"Row {idx}: Invalid or empty ticker symbol '{raw_ticker}'."
                 errors.append(err_msg)
-                results.append(ImportItemResult(
-                    ticker=str(raw_ticker or "UNKNOWN"),
-                    shares=0.0,
-                    avg_price=0.0,
-                    status="failed",
-                    message=err_msg
-                ))
+                results.append(
+                    ImportItemResult(
+                        ticker=str(raw_ticker or "UNKNOWN"), shares=0.0, avg_price=0.0, status="failed", message=err_msg
+                    )
+                )
                 continue
 
             raw_shares = row.get(shares_col)
@@ -227,13 +237,9 @@ class PortfolioImportService:
             if shares is None or shares <= 0:
                 err_msg = f"Row {idx} ({ticker}): Invalid shares quantity '{raw_shares}'. Must be a positive number."
                 errors.append(err_msg)
-                results.append(ImportItemResult(
-                    ticker=ticker,
-                    shares=0.0,
-                    avg_price=0.0,
-                    status="failed",
-                    message=err_msg
-                ))
+                results.append(
+                    ImportItemResult(ticker=ticker, shares=0.0, avg_price=0.0, status="failed", message=err_msg)
+                )
                 continue
 
             raw_avg_price = row.get(avg_price_col)
@@ -241,13 +247,9 @@ class PortfolioImportService:
             if avg_price is None or avg_price < 0:
                 err_msg = f"Row {idx} ({ticker}): Invalid average purchase price '{raw_avg_price}'."
                 errors.append(err_msg)
-                results.append(ImportItemResult(
-                    ticker=ticker,
-                    shares=shares,
-                    avg_price=0.0,
-                    status="failed",
-                    message=err_msg
-                ))
+                results.append(
+                    ImportItemResult(ticker=ticker, shares=shares, avg_price=0.0, status="failed", message=err_msg)
+                )
                 continue
 
             # Optional sector
@@ -261,15 +263,17 @@ class PortfolioImportService:
             tp = _clean_numeric(row.get(tp_col)) if tp_col else None
             sl = _clean_numeric(row.get(sl_col)) if sl_col else None
 
-            cleaned_candidates.append({
-                "row_idx": idx,
-                "ticker": ticker,
-                "shares": round(shares, 4),
-                "avg_price": round(avg_price, 2),
-                "sector": sector,
-                "take_profit": round(tp, 2) if tp is not None else None,
-                "stop_loss": round(sl, 2) if sl is not None else None,
-            })
+            cleaned_candidates.append(
+                {
+                    "row_idx": idx,
+                    "ticker": ticker,
+                    "shares": round(shares, 4),
+                    "avg_price": round(avg_price, 2),
+                    "sector": sector,
+                    "take_profit": round(tp, 2) if tp is not None else None,
+                    "stop_loss": round(sl, 2) if sl is not None else None,
+                }
+            )
 
         if not cleaned_candidates:
             return ImportResultResponse(
@@ -279,19 +283,16 @@ class PortfolioImportService:
                 updated_count=0,
                 failed_count=len(resolved_rows),
                 errors=errors or ["No valid rows could be parsed."],
-                items=results
+                items=results,
             )
 
         # 4. Enrich missing sectors via Yahoo Finance concurrently
-        tickers_needing_sector = list(set(
-            item["ticker"] for item in cleaned_candidates if not item["sector"]
-        ))
+        tickers_needing_sector = list(set(item["ticker"] for item in cleaned_candidates if not item["sector"]))
 
         if tickers_needing_sector:
             logger.info(f"Enriching sectors for {len(tickers_needing_sector)} tickers via Yahoo Finance.")
             sector_results = await asyncio.gather(
-                *[get_sector_from_yfinance(t) for t in tickers_needing_sector],
-                return_exceptions=True
+                *[get_sector_from_yfinance(t) for t in tickers_needing_sector], return_exceptions=True
             )
             sector_map = {}
             for t, s in zip(tickers_needing_sector, sector_results):
@@ -343,7 +344,11 @@ class PortfolioImportService:
                             old_shares = float(existing.shares)
                             old_avg = float(existing.avg_price)
                             total_shares = old_shares + shares
-                            blended_avg = ((old_shares * old_avg) + (shares * avg_price)) / total_shares if total_shares > 0 else avg_price
+                            blended_avg = (
+                                ((old_shares * old_avg) + (shares * avg_price)) / total_shares
+                                if total_shares > 0
+                                else avg_price
+                            )
 
                             existing.shares = round(total_shares, 4)
                             existing.avg_price = round(blended_avg, 2)
@@ -359,7 +364,7 @@ class PortfolioImportService:
                             avg_price=avg_price,
                             sector=sector,
                             take_profit=tp,
-                            stop_loss=sl
+                            stop_loss=sl,
                         )
                         db.add(new_pos)
                         imported_cnt += 1
@@ -374,20 +379,22 @@ class PortfolioImportService:
                         shares=shares,
                         price=avg_price,
                         realized_pl=0.0,
-                        cashflow=-(shares * avg_price)
+                        cashflow=-(shares * avg_price),
                     )
                     db.add(audit_tx)
 
-                    db_results.append(ImportItemResult(
-                        ticker=ticker,
-                        shares=shares,
-                        avg_price=avg_price,
-                        sector=sector,
-                        take_profit=tp,
-                        stop_loss=sl,
-                        status=status_action,
-                        message=msg
-                    ))
+                    db_results.append(
+                        ImportItemResult(
+                            ticker=ticker,
+                            shares=shares,
+                            avg_price=avg_price,
+                            sector=sector,
+                            take_profit=tp,
+                            stop_loss=sl,
+                            status=status_action,
+                            message=msg,
+                        )
+                    )
 
                 db.commit()
                 return imported_cnt, updated_cnt, db_results
@@ -407,8 +414,8 @@ class PortfolioImportService:
                 imported_count=0,
                 updated_count=0,
                 failed_count=len(resolved_rows),
-                errors=[f"Database transaction failed: {str(e)}"],
-                items=results
+                errors=[f"Database transaction failed: {e!s}"],
+                items=results,
             )
 
         # 6. Invalidate caches for this user
@@ -423,7 +430,7 @@ class PortfolioImportService:
             updated_count=updated_count,
             failed_count=len(results) - (imported_count + updated_count),
             errors=errors,
-            items=results
+            items=results,
         )
 
 

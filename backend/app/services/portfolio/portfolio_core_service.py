@@ -1,10 +1,18 @@
 import asyncio
-from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+
 from app.crud import crud_portfolio, crud_transaction
 from app.models.transaction import Transaction
-from app.services.stock_service import get_prices_from_alpaca, get_batch_prices_from_alpaca, get_analysis_data, get_sector_from_yfinance
+from app.services.stock_service import (
+    get_analysis_data,
+    get_batch_prices_from_alpaca,
+    get_prices_from_alpaca,
+    get_sector_from_yfinance,
+)
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
 from . import helpers_stock as hp
+
 
 async def add_stock(db: Session, user_id: int, stock: str, shares: float, price_by: float):
     stock = stock.upper().strip()
@@ -20,9 +28,10 @@ async def add_stock(db: Session, user_id: int, stock: str, shares: float, price_
         sher_amount = float(save_line.shares) + shares
         worth += float(save_line.shares) * float(save_line.avg_price)
         avg_st = worth / sher_amount
-        crud_portfolio.update_portfolio(db, user_id, stock, sher_amount, avg_st)   
+        crud_portfolio.update_portfolio(db, user_id, stock, sher_amount, avg_st)
     crud_transaction.create_transaction(db, user_id, stock, "BUY", shares, price_by, 0.0)
     return "success buy"
+
 
 def sell_stock(db: Session, user_id: int, stock: str, shares: float, sell_price: float):
     stock = stock.upper().strip()
@@ -44,11 +53,12 @@ def sell_stock(db: Session, user_id: int, stock: str, shares: float, sell_price:
             crud_portfolio.update_portfolio(db, user_id, stock, new_share, avg_old)
         return "the sell has been succesful"
 
+
 async def show_portfolio(db: Session, user_id: int):
     rows = crud_portfolio.get_portfolio_all(db, user_id)
     if not rows:
         return []
-        
+
     initial_dates_query = db.execute(
         select(Transaction.ticker, func.min(Transaction.transaction_date))
         .where(Transaction.user_id == user_id, Transaction.type == "BUY")
@@ -58,12 +68,12 @@ async def show_portfolio(db: Session, user_id: int):
 
     # 1. Batch fetch prices and parallel fetch analysis for all positions
     tickers = list(set(r.ticker.upper() for r in rows))
-    
+
     prices_map_task = get_batch_prices_from_alpaca(tickers)
     analysis_tasks = [get_analysis_data(t) for t in tickers]
 
     results = await asyncio.gather(prices_map_task, *analysis_tasks, return_exceptions=True)
-    
+
     prices_map = results[0] if isinstance(results[0], dict) else {}
     analysis_map = {}
     for ticker, analysis_res in zip(tickers, results[1:]):
@@ -116,12 +126,12 @@ async def show_portfolio(db: Session, user_id: int):
             "tp_triggered": bool(getattr(row, "tp_triggered", False)),
             "sl_triggered": bool(getattr(row, "sl_triggered", False)),
             "initial_entry_date": first_buy_dates.get(row.ticker, None),
-            "next_earnings_date": None
+            "next_earnings_date": None,
         }
         stocks_details.append(stock_data)
 
-
     return stocks_details
+
 
 async def portfolio_summary(db: Session, user_id: int):
     portfolio = await show_portfolio(db, user_id)
@@ -133,11 +143,13 @@ async def portfolio_summary(db: Session, user_id: int):
         "total_value": total_live_val,
         "total_profit": realized_pl,
         "daily_change": total_daily_change,
-        "number_of_positions": len(portfolio) if portfolio else 0
+        "number_of_positions": len(portfolio) if portfolio else 0,
     }
 
+
 async def get_portfolio_history(db: Session, user_id: int):
-    from app.services.cache_service import get_cached_data, set_cached_data
+    from app.services.cache_service import get_cached_data
+
     cache_key = f"portfolio_history_retro:{user_id}"
     cached_history = await get_cached_data(cache_key)
     if cached_history:
@@ -149,16 +161,16 @@ async def get_portfolio_history(db: Session, user_id: int):
 
     transactions.sort(key=lambda x: x.transaction_date)
     start_date = transactions[0].transaction_date.date()
-    tickers = list(set(tx.ticker.upper() for tx in transactions if tx.ticker))    
+    tickers = list(set(tx.ticker.upper() for tx in transactions if tx.ticker))
     import yfinance as yf
-    import pandas as pd
 
     def _fetch_hist():
-        return yf.download(tickers, start=start_date, progress=False)['Close']
+        return yf.download(tickers, start=start_date, progress=False)["Close"]
 
-    close_prices = await asyncio.to_thread(_fetch_hist)
+    _ = await asyncio.to_thread(_fetch_hist)
     # process in memory...
     return []
+
 
 async def save_current_portfolio_value(db: Session, user_id: int):
     """
@@ -166,4 +178,3 @@ async def save_current_portfolio_value(db: Session, user_id: int):
     """
     summary = await portfolio_summary(db, user_id)
     return summary.get("total_value", 0.0)
-

@@ -1,5 +1,7 @@
-from pydantic import BaseModel, ConfigDict
 from datetime import date
+
+from pydantic import BaseModel, ConfigDict
+
 
 class PortfolioBase(BaseModel):
     ticker: str
@@ -7,8 +9,10 @@ class PortfolioBase(BaseModel):
     avg_price: float
     sector: str
 
+
 class PortfolioCreate(PortfolioBase):
     user_id: int
+
 
 class PortfolioResponse(PortfolioBase):
     id: int
@@ -16,8 +20,10 @@ class PortfolioResponse(PortfolioBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class PortfolioHistoryCreate(BaseModel):
     total_value: float
+
 
 class PortfolioHistoryResponse(BaseModel):
     id: int
@@ -27,15 +33,16 @@ class PortfolioHistoryResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # Legacy / Compatibility Helper Class
 class Holding:
     def __init__(self, ticker: str, shares: float, avg_price: float):
         self.ticker = ticker
         self.shares = shares
         self.avg_price = avg_price
-    
+
     def cost_basis(self) -> float:
         return float(self.shares) * float(self.avg_price)
-        
+
     def calculate_realized_pl(self, sell_price: float, sell_shares: float) -> float:
         return (float(sell_price) - float(self.avg_price)) * float(sell_shares)

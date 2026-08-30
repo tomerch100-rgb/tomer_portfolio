@@ -28,3 +28,4 @@ env.py
 alembic.ini
 README
 script.py.mako
+.personal_action

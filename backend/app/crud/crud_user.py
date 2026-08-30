@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import select
 from app.models.user import User
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 
 class CRUDUser:
     def get_user_by_username(self, db: Session, username: str) -> User:
@@ -15,5 +16,6 @@ class CRUDUser:
         db.commit()
         db.refresh(db_user)
         return db_user
+
 
 crud_user = CRUDUser()

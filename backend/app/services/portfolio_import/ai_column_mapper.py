@@ -1,11 +1,12 @@
-import os
-import re
+import asyncio
 import json
 import logging
-import asyncio
+import os
+import re
+from typing import Any
+
 import requests
-from typing import Any, Optional
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv())
 logger = logging.getLogger(__name__)
@@ -15,37 +16,137 @@ TARGET_FIELDS = ["ticker", "shares", "avg_price", "sector", "take_profit", "stop
 # Extensive Dictionary for Rule-based & Fuzzy Fallback Mapping
 RULES_DICTIONARY: dict[str, list[str]] = {
     "ticker": [
-        "ticker", "symbol", "stock", "stock symbol", "sym", "ticker symbol",
-        "instrument", "asset", "code", "isin", "ric", "security", "security id", "identifier",
-        "סמל", "סימול", "טיקר", "נייר", "מספר נייר", "שם נייר", "מניה", "שם מניה", "סמל מניה",
-        "קוד נייר", "נכס", "שם נכס", "קוד מניה", "שם נייר ערך", "מספר נייר ערך"
+        "ticker",
+        "symbol",
+        "stock",
+        "stock symbol",
+        "sym",
+        "ticker symbol",
+        "instrument",
+        "asset",
+        "code",
+        "isin",
+        "ric",
+        "security",
+        "security id",
+        "identifier",
+        "סמל",
+        "סימול",
+        "טיקר",
+        "נייר",
+        "מספר נייר",
+        "שם נייר",
+        "מניה",
+        "שם מניה",
+        "סמל מניה",
+        "קוד נייר",
+        "נכס",
+        "שם נכס",
+        "קוד מניה",
+        "שם נייר ערך",
+        "מספר נייר ערך",
     ],
     "shares": [
-        "shares", "quantity", "qty", "units", "amount", "volume", "held", "position size",
-        "count", "total shares", "number of shares", "no of shares", "holding qty",
-        "כמות", "מספר מניות", "יחידות", "כמות יחידות", "יתרה", "כמות נוכחית", "גודל פוזיציה",
-        "כמות ניירות", "כמות מניה", "סהכ כמות", "סה\"כ כמות"
+        "shares",
+        "quantity",
+        "qty",
+        "units",
+        "amount",
+        "volume",
+        "held",
+        "position size",
+        "count",
+        "total shares",
+        "number of shares",
+        "no of shares",
+        "holding qty",
+        "כמות",
+        "מספר מניות",
+        "יחידות",
+        "כמות יחידות",
+        "יתרה",
+        "כמות נוכחית",
+        "גודל פוזיציה",
+        "כמות ניירות",
+        "כמות מניה",
+        "סהכ כמות",
+        'סה"כ כמות',
     ],
     "avg_price": [
-        "avg price", "average price", "avg_price", "avg cost", "average cost",
-        "cost basis", "cost price", "purchase price", "buy price", "unit cost", "price paid",
-        "cost_basis", "open price", "entry price", "avg buy price", "cost/share", "price per share",
-        "מחיר ממוצע", "שער ממוצע", "עלות ממוצעת", "מחיר קניה", "שער קניה", "מחיר עלות",
-        "עלות", "מחיר יחידה", "שער רכישה", "מחיר רכישה", "שער כניסה", "שער פתיחה", "עלות ליחידה"
+        "avg price",
+        "average price",
+        "avg_price",
+        "avg cost",
+        "average cost",
+        "cost basis",
+        "cost price",
+        "purchase price",
+        "buy price",
+        "unit cost",
+        "price paid",
+        "cost_basis",
+        "open price",
+        "entry price",
+        "avg buy price",
+        "cost/share",
+        "price per share",
+        "מחיר ממוצע",
+        "שער ממוצע",
+        "עלות ממוצעת",
+        "מחיר קניה",
+        "שער קניה",
+        "מחיר עלות",
+        "עלות",
+        "מחיר יחידה",
+        "שער רכישה",
+        "מחיר רכישה",
+        "שער כניסה",
+        "שער פתיחה",
+        "עלות ליחידה",
     ],
     "sector": [
-        "sector", "industry", "category", "segment", "asset class",
-        "מגזר", "ענף", "תחום", "סקטור", "תעשייה", "סיווג"
+        "sector",
+        "industry",
+        "category",
+        "segment",
+        "asset class",
+        "מגזר",
+        "ענף",
+        "תחום",
+        "סקטור",
+        "תעשייה",
+        "סיווג",
     ],
     "take_profit": [
-        "take profit", "take_profit", "tp", "target price", "target", "profit target",
-        "exit target", "price target",
-        "יעד רווח", "רווח מטרה", "יעד", "טייק פרופיט", "מחיר יעד", "יעד מכירה"
+        "take profit",
+        "take_profit",
+        "tp",
+        "target price",
+        "target",
+        "profit target",
+        "exit target",
+        "price target",
+        "יעד רווח",
+        "רווח מטרה",
+        "יעד",
+        "טייק פרופיט",
+        "מחיר יעד",
+        "יעד מכירה",
     ],
     "stop_loss": [
-        "stop loss", "stop_loss", "sl", "stop price", "stop limit", "cut loss", "stop",
-        "סטופ לוס", "עצור הפסד", "הגבלת הפסד", "מחיר חסימה", "סטופ"
-    ]
+        "stop loss",
+        "stop_loss",
+        "sl",
+        "stop price",
+        "stop limit",
+        "cut loss",
+        "stop",
+        "סטופ לוס",
+        "עצור הפסד",
+        "הגבלת הפסד",
+        "מחיר חסימה",
+        "סטופ",
+    ],
 }
 
 
@@ -54,8 +155,8 @@ def _normalize_text(text: str) -> str:
     if not text:
         return ""
     text = text.lower().strip()
-    text = re.sub(r'[\'\"_.,\-\(\)\/\\]', ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r"[\'\"_.,\-\(\)\/\\]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
     return text
 
 
@@ -64,12 +165,12 @@ def _is_probable_ticker_value(val: Any) -> bool:
     if not val or not isinstance(val, str):
         return False
     s = val.strip().upper()
-    if 1 <= len(s) <= 8 and re.match(r'^[A-Z0-9.\-]+$', s) and not s.replace('.', '').isdigit():
+    if 1 <= len(s) <= 8 and re.match(r"^[A-Z0-9.\-]+$", s) and not s.replace(".", "").isdigit():
         return True
     return False
 
 
-def _clean_env_key(var_name: str) -> Optional[str]:
+def _clean_env_key(var_name: str) -> str | None:
     """Helper to safely fetch and strip whitespace from env variables."""
     val = os.getenv(var_name)
     if val:
@@ -94,7 +195,9 @@ class AIColumnMapperService:
     def _refresh_keys(self):
         """Loads and sanitizes API keys from environment variables."""
         # 1. Groq / Grok (Priority 1)
-        self.groq_api_key = _clean_env_key("GROQ_API_KEY") or _clean_env_key("GROK_API_KEY") or _clean_env_key("XAI_API_KEY")
+        self.groq_api_key = (
+            _clean_env_key("GROQ_API_KEY") or _clean_env_key("GROK_API_KEY") or _clean_env_key("XAI_API_KEY")
+        )
         # 2. Google Gemini (Priority 2)
         self.gemini_api_key = _clean_env_key("GEMINI_API_KEY")
         # 3. OpenRouter (Priority 3)
@@ -151,7 +254,7 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
     # =========================================================================
     # OPTION 1: Groq / Grok (1st Priority)
     # =========================================================================
-    def _call_groq_sync(self, prompt: str) -> Optional[dict]:
+    def _call_groq_sync(self, prompt: str) -> dict | None:
         """Call Groq or xAI Grok API (OpenAI-compatible) via HTTPS endpoint."""
         if not self.groq_api_key:
             return None
@@ -169,20 +272,20 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
                 payload = {
                     "model": model,
                     "messages": [
-                        {"role": "system", "content": "You are a specialized financial data parsing assistant. Output strictly valid JSON."},
-                        {"role": "user", "content": prompt}
+                        {
+                            "role": "system",
+                            "content": "You are a specialized financial data parsing assistant. Output strictly valid JSON.",
+                        },
+                        {"role": "user", "content": prompt},
                     ],
                     "response_format": {"type": "json_object"},
-                    "temperature": 0.1
+                    "temperature": 0.1,
                 }
                 resp = requests.post(
                     url,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {self.groq_api_key}"
-                    },
+                    headers={"Content-Type": "application/json", "Authorization": f"Bearer {self.groq_api_key}"},
                     json=payload,
-                    timeout=7.0
+                    timeout=7.0,
                 )
                 if resp.status_code == 200:
                     res_json = resp.json()
@@ -201,7 +304,7 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
     # =========================================================================
     # OPTION 2: Google Gemini (2nd Priority)
     # =========================================================================
-    def _call_gemini_sync(self, prompt: str) -> Optional[dict]:
+    def _call_gemini_sync(self, prompt: str) -> dict | None:
         """Call Google Gemini API via standard HTTPS endpoint."""
         if not self.gemini_api_key:
             return None
@@ -212,10 +315,7 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.gemini_api_key}"
                 payload = {
                     "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {
-                        "response_mime_type": "application/json",
-                        "temperature": 0.1
-                    }
+                    "generationConfig": {"response_mime_type": "application/json", "temperature": 0.1},
                 }
                 resp = requests.post(url, json=payload, timeout=7.0)
                 if resp.status_code == 200:
@@ -238,7 +338,7 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
     # =========================================================================
     # OPTION 3: OpenRouter (3rd Priority)
     # =========================================================================
-    def _call_openrouter_sync(self, prompt: str) -> Optional[dict]:
+    def _call_openrouter_sync(self, prompt: str) -> dict | None:
         """Call OpenRouter API via standard HTTPS endpoint."""
         if not self.openrouter_api_key:
             return None
@@ -251,11 +351,14 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
                 payload = {
                     "model": model,
                     "messages": [
-                        {"role": "system", "content": "You are a specialized financial data parsing assistant. Output strictly valid JSON."},
-                        {"role": "user", "content": prompt}
+                        {
+                            "role": "system",
+                            "content": "You are a specialized financial data parsing assistant. Output strictly valid JSON.",
+                        },
+                        {"role": "user", "content": prompt},
                     ],
                     "response_format": {"type": "json_object"},
-                    "temperature": 0.1
+                    "temperature": 0.1,
                 }
                 resp = requests.post(
                     url,
@@ -263,10 +366,10 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
                         "Content-Type": "application/json",
                         "Authorization": f"Bearer {self.openrouter_api_key}",
                         "HTTP-Referer": "https://tomervest.app",
-                        "X-Title": "TomerVest Portfolio Importer"
+                        "X-Title": "TomerVest Portfolio Importer",
                     },
                     json=payload,
-                    timeout=7.0
+                    timeout=7.0,
                 )
                 if resp.status_code == 200:
                     res_json = resp.json()
@@ -282,27 +385,23 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
 
         return None
 
-    def _parse_llm_json(self, raw_text: str) -> Optional[dict]:
+    def _parse_llm_json(self, raw_text: str) -> dict | None:
         """Extracts and parses JSON object from LLM response text."""
         raw_text = raw_text.strip()
         if raw_text.startswith("```"):
-            raw_text = re.sub(r'^```(?:json)?\s*', '', raw_text)
-            raw_text = re.sub(r'\s*```$', '', raw_text)
+            raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text)
+            raw_text = re.sub(r"\s*```$", "", raw_text)
         try:
             return json.loads(raw_text)
         except Exception as e:
             logger.warning(f"Failed to parse LLM JSON: {e}. Raw text: {raw_text[:100]}")
             return None
 
-    def _rule_based_mapping(
-        self,
-        columns: list[str],
-        preview_rows: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+    def _rule_based_mapping(self, columns: list[str], preview_rows: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Robust heuristic rule-based & fuzzy dictionary mapping fallback.
         """
-        mapping: dict[str, Optional[str]] = {col: None for col in columns}
+        mapping: dict[str, str | None] = {col: None for col in columns}
         assigned_targets: set[str] = set()
 
         # Step 1: Exact and substring matching on header names
@@ -356,17 +455,9 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
         has_required = all(t in assigned_targets for t in ["ticker", "shares", "avg_price"])
         confidence = 0.88 if has_required else (0.65 if "ticker" in assigned_targets else 0.40)
 
-        return {
-            "mapping": mapping,
-            "confidence": confidence,
-            "notes": "Rule-based heuristic mapping applied."
-        }
+        return {"mapping": mapping, "confidence": confidence, "notes": "Rule-based heuristic mapping applied."}
 
-    async def map_columns(
-        self,
-        columns: list[str],
-        preview_rows: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+    async def map_columns(self, columns: list[str], preview_rows: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Attempts LLM-based structured mapping with strict priority cascade:
         1. Groq / Grok (1st Priority)
@@ -381,7 +472,7 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
         if has_llm_key:
             prompt = self._build_prompt(columns, preview_rows)
 
-            def _try_llm_cascade() -> Optional[dict]:
+            def _try_llm_cascade() -> dict | None:
                 # --- PRIORITY 1: Groq / Grok ---
                 if self.groq_api_key:
                     try:
@@ -418,7 +509,7 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
                 llm_result = await asyncio.to_thread(_try_llm_cascade)
                 if llm_result and isinstance(llm_result.get("mapping"), dict):
                     raw_map = llm_result["mapping"]
-                    cleaned_map: dict[str, Optional[str]] = {}
+                    cleaned_map: dict[str, str | None] = {}
                     for col in columns:
                         target = raw_map.get(col)
                         if target in TARGET_FIELDS:
@@ -428,11 +519,7 @@ Respond ONLY with a valid JSON object strictly conforming to this schema (no mar
 
                     conf = float(llm_result.get("confidence", 0.95))
                     notes = llm_result.get("notes", "AI-powered column mapping")
-                    return {
-                        "mapping": cleaned_map,
-                        "confidence": min(max(conf, 0.0), 1.0),
-                        "notes": notes
-                    }
+                    return {"mapping": cleaned_map, "confidence": min(max(conf, 0.0), 1.0), "notes": notes}
             except Exception as e:
                 logger.warning(f"LLM cascade execution error: {e}. Falling back to rule-based.")
 

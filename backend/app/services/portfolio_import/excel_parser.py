@@ -1,27 +1,28 @@
-import io
-import re
-import math
 import asyncio
+import io
 import logging
-from typing import Any, Optional
-import pandas as pd
-import numpy as np
+import math
+import re
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
+
+import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+
 class ExcelParserError(Exception):
     """Base exception for file parsing errors."""
-    pass
+
 
 class UnsupportedFileFormatError(ExcelParserError):
     """Raised when the uploaded file format is not supported."""
-    pass
+
 
 class EmptyFileError(ExcelParserError):
     """Raised when the uploaded file has no rows or is empty."""
-    pass
 
 
 def _sanitize_value(val: Any) -> Any:
@@ -45,7 +46,7 @@ def _sanitize_value(val: Any) -> Any:
     if isinstance(val, str):
         val = val.strip()
         # Clean non-printable characters or weird Excel zero-width spaces
-        val = re.sub(r'[\u200b\u200e\u200f\ufeff]', '', val)
+        val = re.sub(r"[\u200b\u200e\u200f\ufeff]", "", val)
         return val if val else None
     if pd.isna(val):
         return None
@@ -65,8 +66,8 @@ def _sanitize_columns(columns: list[Any]) -> list[str]:
         else:
             col_str = str(col).strip()
             # Remove zero-width spaces and normalize newlines/tabs to space
-            col_str = re.sub(r'[\u200b\u200e\u200f\ufeff]', '', col_str)
-            col_str = re.sub(r'\s+', ' ', col_str).strip()
+            col_str = re.sub(r"[\u200b\u200e\u200f\ufeff]", "", col_str)
+            col_str = re.sub(r"\s+", " ", col_str).strip()
             if not col_str or col_str.lower().startswith("unnamed:"):
                 col_name = f"Column_{idx + 1}"
             else:
@@ -89,7 +90,7 @@ def _detect_and_read_csv(file_bytes: bytes) -> pd.DataFrame:
     Safely reads CSV content testing common encodings and separators.
     """
     encodings = ["utf-8-sig", "utf-8", "cp1255", "iso-8859-8", "latin1", "windows-1252"]
-    last_error: Optional[Exception] = None
+    last_error: Exception | None = None
 
     for enc in encodings:
         try:
@@ -178,17 +179,14 @@ def _find_header_and_trim(df: pd.DataFrame) -> pd.DataFrame:
 
             if best_row_idx is not None:
                 new_headers = df.iloc[best_row_idx].tolist()
-                df = df.iloc[best_row_idx + 1:].copy().reset_index(drop=True)
+                df = df.iloc[best_row_idx + 1 :].copy().reset_index(drop=True)
                 df.columns = new_headers
 
     return df
 
 
 def _sync_parse_file(
-    file_bytes: bytes,
-    filename: str,
-    preview_only: bool = False,
-    max_preview_rows: int = 5
+    file_bytes: bytes, filename: str, preview_only: bool = False, max_preview_rows: int = 5
 ) -> tuple[list[str], list[dict[str, Any]], int]:
     """
     Synchronous parsing logic executed in worker thread.
@@ -210,7 +208,7 @@ def _sync_parse_file(
         raise
     except Exception as e:
         logger.exception(f"Unexpected error parsing file {filename}: {e}")
-        raise ExcelParserError(f"Could not parse file '{filename}': {str(e)}")
+        raise ExcelParserError(f"Could not parse file '{filename}': {e!s}")
 
     df = _find_header_and_trim(df)
 
@@ -253,9 +251,7 @@ class ExcelParserService:
 
     @staticmethod
     async def parse_preview(
-        file_bytes: bytes,
-        filename: str,
-        max_preview_rows: int = 5
+        file_bytes: bytes, filename: str, max_preview_rows: int = 5
     ) -> tuple[list[str], list[dict[str, Any]], int]:
         """
         Parses column headers and first N rows as preview in a worker thread.
@@ -265,23 +261,15 @@ class ExcelParserService:
             file_bytes=file_bytes,
             filename=filename,
             preview_only=True,
-            max_preview_rows=max_preview_rows
+            max_preview_rows=max_preview_rows,
         )
 
     @staticmethod
-    async def parse_all_rows(
-        file_bytes: bytes,
-        filename: str
-    ) -> tuple[list[str], list[dict[str, Any]], int]:
+    async def parse_all_rows(file_bytes: bytes, filename: str) -> tuple[list[str], list[dict[str, Any]], int]:
         """
         Parses all rows in a worker thread.
         """
-        return await asyncio.to_thread(
-            _sync_parse_file,
-            file_bytes=file_bytes,
-            filename=filename,
-            preview_only=False
-        )
+        return await asyncio.to_thread(_sync_parse_file, file_bytes=file_bytes, filename=filename, preview_only=False)
 
 
 excel_parser = ExcelParserService()

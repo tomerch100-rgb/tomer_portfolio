@@ -12,6 +12,7 @@ import TransactionHistory from "./pages/TransactionHistory";
 
 import DeepPortfolioAnalysis from "./pages/DeepPortfolioAnalysis";
 import PortfolioAnalytics from "./pages/PortfolioAnalytics";
+import AIStockResearch from "./pages/AIStockResearch";
 
 import { useEffect } from "react"
 import { useDispatch } from "react-redux"
@@ -40,6 +41,8 @@ const router = createBrowserRouter([
       { path: "/dashbord", element: <Dashbord /> },
       { path: "/deep-analysis", element: <DeepPortfolioAnalysis /> },
       { path: "/analytics", element: <PortfolioAnalytics /> },
+      { path: "/ai-research", element: <AIStockResearch /> },
+      { path: "/ai-research/:ticker", element: <AIStockResearch /> },
       { path: "/orders", element: <Orders /> },
       { path: "/history", element: <TransactionHistory /> },
       { path: "/watchlist/:ticker", element: <Watchlist /> },

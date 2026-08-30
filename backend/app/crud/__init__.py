@@ -1,6 +1,6 @@
-from .crud_user import CRUDUser
 from .crud_portfolio import CRUDPortfolio
 from .crud_transaction import CRUDTransaction
+from .crud_user import CRUDUser
 from .crud_watchlist import CRUDWatchlist
 
 crud_user = CRUDUser()
