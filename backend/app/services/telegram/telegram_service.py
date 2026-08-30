@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-ENVIRONMENT = os.getenv("ENVIRONMENT", "production") 
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 dp = Dispatcher()
 bot_router = Router()
 dp.include_router(bot_router)
