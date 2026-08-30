@@ -21,3 +21,7 @@ async def ai_stock_research(
     language: str = Query("he", description="שפת הדוח (he / en)"),
 ):
     return await generate_stock_research(ticker=ticker, language=language)
+
+@router.get("/aixnnx")
+async def ai_stock_research(ticker: str = "AAPL", language: str = "he"):
+    return {"status": "ok", "ticker": ticker}

@@ -3,14 +3,17 @@ import json
 import logging
 import os
 import re
+from google.genai import types
+from google import genai
 
-import google.generativeai as genai
 from app.services.cache_service import get_cached_data, set_cached_data
 from app.services.portfolio.portfolio_analytics_service import get_stock_details
 from openai import APIConnectionError, APIError, APITimeoutError, AsyncOpenAI
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
+
+client = genai.Client()
 
 # --- Configuration Constants ---
 AI_TIMEOUT_SECONDS: float = 15.0
@@ -68,22 +71,22 @@ def clean_json_response(text: str) -> dict:
 
 # --- AI Provider Implementations with Strict Timeouts ---
 
-
 async def call_gemini(prompt: str) -> str:
     """
-    Call Google Gemini 1.5 Flash asynchronously with a strict timeout.
+    Call Google Gemini 1.5 Flash asynchronously with a strict timeout (New SDK).
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY is not configured in environment.")
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
-
-    generation_coroutine = model.generate_content_async(
-        prompt,
-        generation_config=genai.GenerationConfig(
-            response_mime_type="application/json", response_schema=StockResearchReport, temperature=0.2
+    # שימוש בלקוח האסינכרוני (aio) של החבילה החדשה
+    generation_coroutine = client.aio.models.generate_content(
+        model="gemini-1.5-flash",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=StockResearchReport,
+            temperature=0.2
         ),
     )
 
@@ -92,6 +95,7 @@ async def call_gemini(prompt: str) -> str:
 
     if not response or not response.text:
         raise ValueError("Empty response from Gemini")
+        
     return response.text
 
 
