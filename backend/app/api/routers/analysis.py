@@ -21,4 +21,3 @@ async def ai_stock_research(
     language: str = Query("he", description="שפת הדוח (he / en)"),
 ):
     return await generate_stock_research(ticker=ticker, language=language)
-

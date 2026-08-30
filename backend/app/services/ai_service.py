@@ -71,6 +71,7 @@ def clean_json_response(text: str) -> dict:
 
 # --- AI Provider Implementations with Strict Timeouts ---
 
+
 async def call_gemini(prompt: str) -> str:
     """
     Call Google Gemini 1.5 Flash asynchronously with a strict timeout (New SDK).
@@ -84,9 +85,7 @@ async def call_gemini(prompt: str) -> str:
         model="gemini-1.5-flash",
         contents=prompt,
         config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=StockResearchReport,
-            temperature=0.2
+            response_mime_type="application/json", response_schema=StockResearchReport, temperature=0.2
         ),
     )
 
@@ -95,7 +94,7 @@ async def call_gemini(prompt: str) -> str:
 
     if not response or not response.text:
         raise ValueError("Empty response from Gemini")
-        
+
     return response.text
 
 
