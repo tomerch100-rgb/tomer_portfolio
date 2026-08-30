@@ -1,13 +1,13 @@
 from app.services.portfolio_import.import_service import (
-    import_service,
     PortfolioImportService,
-    _clean_ticker,
     _clean_numeric,
+    _clean_ticker,
+    import_service,
 )
 
 __all__ = [
-    "import_service",
     "PortfolioImportService",
-    "_clean_ticker",
     "_clean_numeric",
+    "_clean_ticker",
+    "import_service",
 ]

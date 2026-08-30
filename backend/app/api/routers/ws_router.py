@@ -1,7 +1,8 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status, Cookie, Query
-from app.core.ws_manager import manager
 import logging
+
 from app.core.security import verify_token
+from app.core.ws_manager import manager
+from fastapi import APIRouter, Cookie, Query, WebSocket, WebSocketDisconnect, status
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["websockets"])
@@ -14,8 +15,9 @@ ALLOWED_ORIGIN_PATTERNS = [
     "http://localhost:5174",
     "http://localhost:5175",
     "http://127.0.0.1:5175",
-    "https://tomer-portfolio-rhvg.vercel.app"
+    "https://tomer-portfolio-rhvg.vercel.app",
 ]
+
 
 @router.websocket("/ws")
 @router.websocket("/ws/{user_id_param}")
@@ -23,10 +25,15 @@ async def websocket_endpoint(
     websocket: WebSocket,
     user_id_param: str | None = None,
     token: str | None = Query(None),
-    access_token: str | None = Cookie(None)
+    access_token: str | None = Cookie(None),
 ):
     origin = websocket.headers.get("origin")
-    if origin and origin not in ALLOWED_ORIGIN_PATTERNS and not origin.startswith("http://localhost:") and not origin.startswith("http://127.0.0.1:"):
+    if (
+        origin
+        and origin not in ALLOWED_ORIGIN_PATTERNS
+        and not origin.startswith("http://localhost:")
+        and not origin.startswith("http://127.0.0.1:")
+    ):
         logger.warning(f"🚫 WS Connection rejected: Unauthorized origin '{origin}'")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
@@ -62,7 +69,7 @@ async def websocket_endpoint(
 
     # Successful connection
     await manager.connect(websocket, user_id)
-    
+
     try:
         while True:
             data = await websocket.receive_text()

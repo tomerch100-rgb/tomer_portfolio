@@ -1,10 +1,11 @@
-import sys
 import os
+import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from sqlalchemy import text
 from app.db.session import engine
+from sqlalchemy import text
+
 
 def migrate():
     try:
@@ -18,6 +19,7 @@ def migrate():
             print("Migration successful.")
     except Exception as e:
         print(f"Migration failed: {e}")
+
 
 if __name__ == "__main__":
     migrate()

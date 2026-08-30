@@ -1,18 +1,16 @@
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.orm import Session
+
 from app.models.portfolio import Portfolio
 from app.models.transaction import Transaction
 from app.models.user import User
 
+
 @pytest.mark.asyncio
 async def test_add_stock_order_success(client: AsyncClient, auth_headers: dict, test_user: User, db_session: Session):
     """Verify adding/buying stock updates portfolio holdings and records transaction."""
-    payload = {
-        "stock": "NVDA",
-        "shares": 10,
-        "avg_price": 120.00
-    }
+    payload = {"stock": "NVDA", "shares": 10, "avg_price": 120.00}
     response = await client.post("/orders/add_stock", headers=auth_headers, json=payload)
     assert response.status_code == 200
 
@@ -27,25 +25,16 @@ async def test_add_stock_order_success(client: AsyncClient, auth_headers: dict, 
     assert tx is not None
     assert tx.shares == 10
 
+
 @pytest.mark.asyncio
 async def test_sell_stock_order_success(client: AsyncClient, auth_headers: dict, test_user: User, db_session: Session):
     """Verify selling stock reduces share count and creates sell transaction."""
     # Seed holding
-    holding = Portfolio(
-        user_id=test_user.user_id,
-        ticker="AAPL",
-        shares=20,
-        avg_price=150.00,
-        sector="Technology"
-    )
+    holding = Portfolio(user_id=test_user.user_id, ticker="AAPL", shares=20, avg_price=150.00, sector="Technology")
     db_session.add(holding)
     db_session.commit()
 
-    payload = {
-        "stock": "AAPL",
-        "shares": 10,
-        "avg_price": 180.00
-    }
+    payload = {"stock": "AAPL", "shares": 10, "avg_price": 180.00}
     response = await client.post("/orders/sell_stock", headers=auth_headers, json=payload)
     assert response.status_code == 200
 
@@ -58,23 +47,22 @@ async def test_sell_stock_order_success(client: AsyncClient, auth_headers: dict,
     assert tx is not None
     assert tx.shares == 10
 
+
 @pytest.mark.asyncio
-async def test_sell_stock_more_than_owned(client: AsyncClient, auth_headers: dict, test_user: User, db_session: Session):
+async def test_sell_stock_more_than_owned(
+    client: AsyncClient, auth_headers: dict, test_user: User, db_session: Session
+):
     """Verify attempting to sell more shares than owned returns an error."""
     holding = Portfolio(
-        user_id=test_user.user_id,
-        ticker="TSLA",
-        shares=5,
-        avg_price=200.00,
-        sector="Consumer Cyclical"
+        user_id=test_user.user_id, ticker="TSLA", shares=5, avg_price=200.00, sector="Consumer Cyclical"
     )
     db_session.add(holding)
     db_session.commit()
 
     payload = {
         "stock": "TSLA",
-        "shares": 10, # owns only 5
-        "avg_price": 220.00
+        "shares": 10,  # owns only 5
+        "avg_price": 220.00,
     }
     response = await client.post("/orders/sell_stock", headers=auth_headers, json=payload)
     assert response.status_code in [400, 200]

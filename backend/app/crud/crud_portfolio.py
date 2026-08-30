@@ -1,26 +1,19 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import select, func
 from app.models.portfolio import Portfolio, PortfolioHistory
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
 
 class CRUDPortfolio:
     def get_portfolio_stock(self, db: Session, user_id: int, ticker: str) -> Portfolio:
-        return db.scalars(
-            select(Portfolio).where(Portfolio.user_id == user_id, Portfolio.ticker == ticker)
-        ).first()
+        return db.scalars(select(Portfolio).where(Portfolio.user_id == user_id, Portfolio.ticker == ticker)).first()
 
     def get_portfolio_all(self, db: Session, user_id: int) -> list[Portfolio]:
-        return list(db.scalars(
-            select(Portfolio).where(Portfolio.user_id == user_id)
-        ).all())
+        return list(db.scalars(select(Portfolio).where(Portfolio.user_id == user_id)).all())
 
-    def insert_portfolio(self, db: Session, user_id: int, ticker: str, shares: float, avg_price: float, sector: str) -> Portfolio:
-        db_portfolio = Portfolio(
-            user_id=user_id,
-            ticker=ticker,
-            shares=shares,
-            avg_price=avg_price,
-            sector=sector
-        )
+    def insert_portfolio(
+        self, db: Session, user_id: int, ticker: str, shares: float, avg_price: float, sector: str
+    ) -> Portfolio:
+        db_portfolio = Portfolio(user_id=user_id, ticker=ticker, shares=shares, avg_price=avg_price, sector=sector)
         db.add(db_portfolio)
         db.commit()
         db.refresh(db_portfolio)
@@ -35,12 +28,20 @@ class CRUDPortfolio:
             db.refresh(db_portfolio)
         return db_portfolio
 
-    def update_position_analysis(self, db: Session, user_id: int, ticker: str, risk_level: str | None, take_profit: float | None, stop_loss: float | None) -> Portfolio:
+    def update_position_analysis(
+        self,
+        db: Session,
+        user_id: int,
+        ticker: str,
+        risk_level: str | None,
+        take_profit: float | None,
+        stop_loss: float | None,
+    ) -> Portfolio:
         db_portfolio = self.get_portfolio_stock(db, user_id, ticker)
         if db_portfolio:
             if risk_level is not None:
                 db_portfolio.risk_level = risk_level
-            
+
             # If take_profit is modified or set, reset tp_triggered so the new threshold is monitored
             if take_profit != db_portfolio.take_profit:
                 db_portfolio.take_profit = take_profit
@@ -55,7 +56,6 @@ class CRUDPortfolio:
             db.refresh(db_portfolio)
         return db_portfolio
 
-
     def delete_portfolio_stock(self, db: Session, user_id: int, ticker: str) -> bool:
         db_portfolio = self.get_portfolio_stock(db, user_id, ticker)
         if db_portfolio:
@@ -66,15 +66,14 @@ class CRUDPortfolio:
 
     def get_portfolio_total_value(self, db: Session, user_id: int) -> float:
         val = db.scalar(
-            select(func.coalesce(func.sum(Portfolio.shares * Portfolio.avg_price), 0))
-            .where(Portfolio.user_id == user_id)
+            select(func.coalesce(func.sum(Portfolio.shares * Portfolio.avg_price), 0)).where(
+                Portfolio.user_id == user_id
+            )
         )
         return float(val) if val is not None else 0.0
 
     def get_portfolio_positions_count(self, db: Session, user_id: int) -> int:
-        return db.scalar(
-            select(func.count()).select_from(Portfolio).where(Portfolio.user_id == user_id)
-        ) or 0
+        return db.scalar(select(func.count()).select_from(Portfolio).where(Portfolio.user_id == user_id)) or 0
 
     # History Operations
     def insert_portfolio_history(self, db: Session, user_id: int, total_value: float) -> PortfolioHistory:
@@ -85,10 +84,13 @@ class CRUDPortfolio:
         return db_hist
 
     def get_portfolio_history(self, db: Session, user_id: int) -> list[PortfolioHistory]:
-        return list(db.scalars(
-            select(PortfolioHistory)
-            .where(PortfolioHistory.user_id == user_id)
-            .order_by(PortfolioHistory.calculation_date.asc())
-        ).all())
-        
+        return list(
+            db.scalars(
+                select(PortfolioHistory)
+                .where(PortfolioHistory.user_id == user_id)
+                .order_by(PortfolioHistory.calculation_date.asc())
+            ).all()
+        )
+
+
 crud_portfolio = CRUDPortfolio()

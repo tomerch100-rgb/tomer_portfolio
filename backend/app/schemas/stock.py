@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class StockInfo(BaseModel):
     stock: str
     shares: float

@@ -1,5 +1,5 @@
-import pytest
 from playwright.sync_api import Browser, expect
+
 
 def test_multi_tab_realtime_synchronization(browser: Browser, frontend_url: str):
     """

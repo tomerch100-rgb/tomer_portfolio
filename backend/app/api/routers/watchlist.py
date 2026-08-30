@@ -1,23 +1,21 @@
-from app.schemas.watchlist import WatchlistAlertUpdate
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from app.db.session import get_db
 import app.services.portfolio as pf
 from app.core import security
+from app.db.session import get_db
+from app.schemas.watchlist import WatchlistAlertUpdate, WatchlistCreate
 from app.services.stock_service import get_prices_from_alpaca
-from app.schemas.watchlist import WatchlistCreate
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-router = APIRouter(
-    tags=["watchlist"] , prefix= "/watchlist"
-)
+router = APIRouter(tags=["watchlist"], prefix="/watchlist")
+
 
 @router.post("/add_watchlist")
 @router.post("")
 async def add_watchlist(
     item: WatchlistCreate,  # עכשיו מקבלים JSON מסודר מהפרונטאנד!
-    user_id = Depends(security.get_current_user_id), 
-    db: Session = Depends(get_db)
-): 
+    user_id=Depends(security.get_current_user_id),
+    db: Session = Depends(get_db),
+):
     return await pf.post_watchlist(db, item, user_id)
 
 
@@ -26,16 +24,14 @@ async def add_watchlist(
 async def update_watchlist_alert(
     ticker: str,
     alert_data: WatchlistAlertUpdate,
-    user_id = Depends(security.get_current_user_id), 
-    db: Session = Depends(get_db)
+    user_id=Depends(security.get_current_user_id),
+    db: Session = Depends(get_db),
 ):
     return await pf.update_alert_service(db, user_id, ticker, alert_data)
 
+
 @router.get("/show_watchlist")
-async def show_watchlist(
-    user_id = Depends(security.get_current_user_id), 
-    db: Session = Depends(get_db)
-):
+async def show_watchlist(user_id=Depends(security.get_current_user_id), db: Session = Depends(get_db)):
     return await pf.get_watchlist(db, user_id)
 
 

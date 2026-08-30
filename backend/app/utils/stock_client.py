@@ -2,6 +2,7 @@ import requests
 
 BASE_URL = "http://127.0.0.1:8000"
 
+
 def run_full_flow():
     # 1. הרשמה
     reg_data = {"username": "tomer", "password": "123", "email": "tomer@test.com"}
@@ -13,7 +14,7 @@ def run_full_flow():
     if login.status_code != 200:
         print(f"Login failed: {login.text}")
         return
-    
+
     token = login.json().get("access_token")
     headers = {"Authorization": f"Bearer {token}"}
     print(f"2. Login: Success | Token: {token[:10]}...")
@@ -30,6 +31,7 @@ def run_full_flow():
     # 5. הצגת תיק
     port = requests.get(f"{BASE_URL}/display/show_portfolio", headers=headers)
     print(f"5. Portfolio: {port.status_code} | {port.json()}")
+
 
 if __name__ == "__main__":
     run_full_flow()

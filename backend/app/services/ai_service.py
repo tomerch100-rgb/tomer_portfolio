@@ -1,16 +1,14 @@
-import os
-import json
-import re
-import logging
 import asyncio
-from typing import List, Optional
-from pydantic import BaseModel, Field
-import google.generativeai as genai
-import openai
-from openai import AsyncOpenAI, APITimeoutError, APIConnectionError, APIError
+import json
+import logging
+import os
+import re
 
+import google.generativeai as genai
 from app.services.cache_service import get_cached_data, set_cached_data
 from app.services.portfolio.portfolio_analytics_service import get_stock_details
+from openai import APIConnectionError, APIError, APITimeoutError, AsyncOpenAI
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -20,21 +18,24 @@ AI_CACHE_TTL_SECONDS: int = 14400  # 4 Hours (14,400s)
 
 # --- Pydantic Schema Definitions ---
 
+
 class StockScore(BaseModel):
     growth: int = Field(ge=0, le=100, description="ציון צמיחה מ-0 עד 100")
     valuation: int = Field(ge=0, le=100, description="ציון תמחור ושוויוניות מ-0 עד 100")
     profitability: int = Field(ge=0, le=100, description="ציון רווחיות מ-0 עד 100")
     overall_score: int = Field(ge=0, le=100, description="ציון משוקלל סופי מ-0 עד 100")
 
+
 class StockResearchReport(BaseModel):
     ticker: str = Field(description="סימול המניה")
-    company_name: Optional[str] = Field(default="", description="שם החברה")
+    company_name: str | None = Field(default="", description="שם החברה")
     summary: str = Field(description="תקציר אנליטי מקיף על מצב המניה")
     score: StockScore = Field(description="ציוני ביצועים כמותיים")
-    bull_case: List[str] = Field(description="3-5 נקודות חוזקה והזדמנויות מרכזיות (Bullish)")
-    bear_case: List[str] = Field(description="3-5 סיכונים ואיומים מרכזיים (Bearish)")
+    bull_case: list[str] = Field(description="3-5 נקודות חוזקה והזדמנויות מרכזיות (Bullish)")
+    bear_case: list[str] = Field(description="3-5 סיכונים ואיומים מרכזיים (Bearish)")
     what_to_monitor: str = Field(description="אינדיקטור / זרז מרכזי שחובה לעקוב אחריו")
-    target_recommendation: Optional[str] = Field(default="HOLD", description="המלצת פעולה: BUY, HOLD, או SELL")
+    target_recommendation: str | None = Field(default="HOLD", description="המלצת פעולה: BUY, HOLD, או SELL")
+
 
 # Schema instructions for OpenAI-compatible providers (Groq & OpenRouter)
 SCHEMA_INSTRUCTIONS = f"""
@@ -44,26 +45,29 @@ You MUST return ONLY a valid JSON object matching this exact schema:
 
 # --- JSON Sanitization Helper ---
 
+
 def clean_json_response(text: str) -> dict:
     """Extract and parse JSON cleanly even if wrapped in markdown codeblocks."""
     if not text or not text.strip():
         raise ValueError("Empty response from AI provider")
-    
+
     cleaned = text.strip()
     # Remove markdown ```json ... ``` wrappers if present
     if cleaned.startswith("```"):
         cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
         cleaned = re.sub(r"\s*```$", "", cleaned)
-    
+
     # Locate outer curly braces
     first_brace = cleaned.find("{")
     last_brace = cleaned.rfind("}")
     if first_brace != -1 and last_brace != -1:
-        cleaned = cleaned[first_brace:last_brace + 1]
-        
+        cleaned = cleaned[first_brace : last_brace + 1]
+
     return json.loads(cleaned)
 
+
 # --- AI Provider Implementations with Strict Timeouts ---
+
 
 async def call_gemini(prompt: str) -> str:
     """
@@ -75,22 +79,21 @@ async def call_gemini(prompt: str) -> str:
 
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-1.5-flash")
-    
+
     generation_coroutine = model.generate_content_async(
         prompt,
         generation_config=genai.GenerationConfig(
-            response_mime_type="application/json",
-            response_schema=StockResearchReport,
-            temperature=0.2
-        )
+            response_mime_type="application/json", response_schema=StockResearchReport, temperature=0.2
+        ),
     )
-    
+
     # Enforce strict 15.0s timeout
     response = await asyncio.wait_for(generation_coroutine, timeout=AI_TIMEOUT_SECONDS)
-    
+
     if not response or not response.text:
         raise ValueError("Empty response from Gemini")
     return response.text
+
 
 async def call_groq(prompt: str) -> str:
     """
@@ -100,29 +103,23 @@ async def call_groq(prompt: str) -> str:
     if not api_key:
         raise ValueError("GROQ_API_KEY is not configured in environment.")
 
-    client = AsyncOpenAI(
-        api_key=api_key,
-        base_url="https://api.groq.com/openai/v1",
-        timeout=AI_TIMEOUT_SECONDS
-    )
-    
+    client = AsyncOpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1", timeout=AI_TIMEOUT_SECONDS)
+
     response = await client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
             {
                 "role": "system",
-                "content": "You are a senior equity research analyst. Return responses in valid JSON adhering strictly to the schema provided."
+                "content": "You are a senior equity research analyst. Return responses in valid JSON adhering strictly to the schema provided.",
             },
-            {
-                "role": "user",
-                "content": prompt + "\n\n" + SCHEMA_INSTRUCTIONS
-            }
+            {"role": "user", "content": prompt + "\n\n" + SCHEMA_INSTRUCTIONS},
         ],
         response_format={"type": "json_object"},
         temperature=0.2,
-        timeout=AI_TIMEOUT_SECONDS
+        timeout=AI_TIMEOUT_SECONDS,
     )
     return response.choices[0].message.content
+
 
 async def call_openrouter(prompt: str) -> str:
     """
@@ -132,31 +129,26 @@ async def call_openrouter(prompt: str) -> str:
     if not api_key:
         raise ValueError("OPENROUTER_API_KEY is not configured in environment.")
 
-    client = AsyncOpenAI(
-        api_key=api_key,
-        base_url="https://openrouter.ai/api/v1",
-        timeout=AI_TIMEOUT_SECONDS
-    )
-    
+    client = AsyncOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1", timeout=AI_TIMEOUT_SECONDS)
+
     response = await client.chat.completions.create(
         model="meta-llama/llama-3.3-70b-instruct:free",
         messages=[
             {
                 "role": "system",
-                "content": "You are an expert Wall Street equity research analyst. Output strictly valid JSON matching the schema."
+                "content": "You are an expert Wall Street equity research analyst. Output strictly valid JSON matching the schema.",
             },
-            {
-                "role": "user",
-                "content": prompt + "\n\n" + SCHEMA_INSTRUCTIONS
-            }
+            {"role": "user", "content": prompt + "\n\n" + SCHEMA_INSTRUCTIONS},
         ],
         response_format={"type": "json_object"},
         temperature=0.2,
-        timeout=AI_TIMEOUT_SECONDS
+        timeout=AI_TIMEOUT_SECONDS,
     )
     return response.choices[0].message.content
 
+
 # --- Roulette / Multi-Provider Fallback Mechanism ---
+
 
 async def run_ai_roulette(prompt: str) -> dict:
     """
@@ -168,45 +160,47 @@ async def run_ai_roulette(prompt: str) -> dict:
     providers = [
         {"name": "Groq", "func": call_groq},
         {"name": "Gemini", "func": call_gemini},
-        {"name": "OpenRouter", "func": call_openrouter}
+        {"name": "OpenRouter", "func": call_openrouter},
     ]
-    
+
     last_errors = []
-    
+
     for provider in providers:
         provider_name = provider["name"]
         try:
             logger.info(f"🎲 Attempting AI analysis with provider: {provider_name} (timeout={AI_TIMEOUT_SECONDS}s)")
             result_text = await provider["func"](prompt)
             parsed_json = clean_json_response(result_text)
-            
+
             # Validate output against Pydantic model for complete type safety
             validated_report = StockResearchReport.model_validate(parsed_json)
             logger.info(f"✅ AI research successfully generated via {provider_name}")
             return validated_report.model_dump()
-            
-        except (asyncio.TimeoutError, APITimeoutError) as e:
+
+        except (TimeoutError, APITimeoutError) as e:
             logger.warning(f"⏱️ Provider '{provider_name}' timed out after {AI_TIMEOUT_SECONDS}s: {e}")
             last_errors.append(f"{provider_name} (Timeout after {AI_TIMEOUT_SECONDS}s)")
             continue
         except (APIConnectionError, APIError) as e:
             logger.warning(f"🌐 Provider '{provider_name}' API connection error: {e}")
-            last_errors.append(f"{provider_name} (API Error: {str(e)})")
+            last_errors.append(f"{provider_name} (API Error: {e!s})")
             continue
         except Exception as e:
             logger.warning(f"⚠️ Provider '{provider_name}' failed: {e}")
-            last_errors.append(f"{provider_name}: {str(e)}")
+            last_errors.append(f"{provider_name}: {e!s}")
             continue
-            
+
     error_summary = "; ".join(last_errors)
     raise RuntimeError(f"🚨 All AI providers failed or timed out. Details: {error_summary}")
 
+
 # --- Primary Business Function with Multi-Layer Redis Caching ---
+
 
 async def generate_stock_research(ticker: str, language: str = "he") -> dict:
     """
     Generates an institutional-grade AI research report for a stock:
-    
+
     Step 1: Check Redis / In-Memory cache first. If found, return immediately in 0ms.
     Step 2: On cache miss, fetch real-time market data & fundamental valuation metrics.
     Step 3: Execute AI Roulette with 15.0s per-provider timeouts.
@@ -215,7 +209,7 @@ async def generate_stock_research(ticker: str, language: str = "he") -> dict:
     """
     clean_ticker = ticker.strip().upper()
     cache_key = f"ai_stock_research:{clean_ticker}:{language}"
-    
+
     # 1. Check multi-layer Redis / Memory cache
     cached_report = await get_cached_data(cache_key)
     if cached_report and isinstance(cached_report, dict):
@@ -228,7 +222,7 @@ async def generate_stock_research(ticker: str, language: str = "he") -> dict:
     stock_details = await get_stock_details(clean_ticker)
     if not stock_details:
         raise ValueError(f"Could not fetch market data for ticker {clean_ticker}")
-    
+
     company_name = stock_details.get("company_name", clean_ticker)
     current_price = stock_details.get("current_price")
     market_cap = stock_details.get("market_cap")
@@ -253,7 +247,7 @@ async def generate_stock_research(ticker: str, language: str = "he") -> dict:
         "52_week_low": fifty_two_week_low,
         "profit_margins": profit_margins,
         "revenue": revenue,
-        "analyst_consensus": recommendation
+        "analyst_consensus": recommendation,
     }
 
     # 3. Construct structured prompt
@@ -287,5 +281,5 @@ Instructions:
     # 5. Persist result in Redis / In-Memory cache with configured TTL (4 hours)
     await set_cached_data(cache_key, research_report, expiration=AI_CACHE_TTL_SECONDS)
     logger.info(f"💾 [CACHE STORE] Persisted AI research for {clean_ticker} with TTL={AI_CACHE_TTL_SECONDS}s")
-    
+
     return research_report

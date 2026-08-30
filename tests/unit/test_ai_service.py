@@ -1,13 +1,14 @@
+
 import pytest
-import asyncio
+from pydantic import ValidationError
+
 from app.services.ai_service import (
-    clean_json_response,
     StockResearchReport,
-    StockScore,
-    run_ai_roulette,
+    clean_json_response,
     generate_stock_research,
-    AI_TIMEOUT_SECONDS
+    run_ai_roulette,
 )
+
 
 def test_clean_json_response_with_markdown_fences():
     """Verify clean_json_response strips markdown ```json code blocks."""
@@ -34,26 +35,23 @@ def test_clean_json_response_with_markdown_fences():
     assert parsed["ticker"] == "NVDA"
     assert parsed["score"]["growth"] == 95
 
+
 def test_pydantic_schema_validation_valid():
     """Verify StockResearchReport successfully validates valid payload."""
     data = {
         "ticker": "AAPL",
         "company_name": "Apple Inc.",
         "summary": "Consumer electronics giant",
-        "score": {
-            "growth": 80,
-            "valuation": 70,
-            "profitability": 95,
-            "overall_score": 82
-        },
+        "score": {"growth": 80, "valuation": 70, "profitability": 95, "overall_score": 82},
         "bull_case": ["Services revenue growing", "High buyback rate"],
         "bear_case": ["China sales slowdown"],
         "what_to_monitor": "iPhone upgrade cycle",
-        "target_recommendation": "BUY"
+        "target_recommendation": "BUY",
     }
     report = StockResearchReport.model_validate(data)
     assert report.ticker == "AAPL"
     assert report.score.overall_score == 82
+
 
 def test_pydantic_schema_validation_invalid_score_range():
     """Verify validation fails if a score is out of 0-100 bounds."""
@@ -61,23 +59,25 @@ def test_pydantic_schema_validation_invalid_score_range():
         "ticker": "AAPL",
         "summary": "Test",
         "score": {
-            "growth": 150, # Out of bounds (ge=0, le=100)
+            "growth": 150,  # Out of bounds (ge=0, le=100)
             "valuation": 50,
             "profitability": 50,
-            "overall_score": 50
+            "overall_score": 50,
         },
         "bull_case": ["Bull"],
         "bear_case": ["Bear"],
-        "what_to_monitor": "Monitor"
+        "what_to_monitor": "Monitor",
     }
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         StockResearchReport.model_validate(invalid_data)
+
 
 @pytest.mark.asyncio
 async def test_ai_roulette_fallback_when_first_provider_times_out(monkeypatch):
     """Verify that if the first provider raises TimeoutError, roulette falls back to next provider."""
+
     async def mock_timeout_groq(prompt):
-        raise asyncio.TimeoutError("Groq timed out after 15.0s")
+        raise TimeoutError("Groq timed out after 15.0s")
 
     async def mock_success_gemini(prompt):
         return """{
@@ -103,12 +103,13 @@ async def test_ai_roulette_fallback_when_first_provider_times_out(monkeypatch):
     assert result["ticker"] == "TSLA"
     assert result["score"]["overall_score"] == 76
 
+
 @pytest.mark.asyncio
 async def test_generate_stock_research_uses_cache(monkeypatch):
     """Verify that cached research report is returned without calling AI providers."""
     clean_ticker = "GOOGL"
     cache_key = f"ai_stock_research:{clean_ticker}:he"
-    
+
     mock_cached_report = {
         "ticker": "GOOGL",
         "company_name": "Alphabet Inc.",
@@ -117,7 +118,7 @@ async def test_generate_stock_research_uses_cache(monkeypatch):
         "bull_case": ["Cloud profitability"],
         "bear_case": ["Search ad disruption"],
         "what_to_monitor": "Gemini AI adoption",
-        "target_recommendation": "BUY"
+        "target_recommendation": "BUY",
     }
 
     async def mock_get_cached(key):

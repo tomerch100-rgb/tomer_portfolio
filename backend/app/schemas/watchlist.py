@@ -1,11 +1,13 @@
-from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
 
 class WatchlistCreate(BaseModel):
     ticker: str
-    target_price: Optional[float] = None
-    alert_direction: Optional[str] = None
+    target_price: float | None = None
+    alert_direction: str | None = None
+
 
 class WatchlistResponse(BaseModel):
     id: int
@@ -16,7 +18,7 @@ class WatchlistResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    
+
 class WatchlistAlertUpdate(BaseModel):
-    target_price: Optional[float] = None
-    alert_direction: Optional[str] = None
+    target_price: float | None = None
+    alert_direction: str | None = None

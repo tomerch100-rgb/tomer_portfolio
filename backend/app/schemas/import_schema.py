@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, Any, Literal
-from enum import Enum
+from enum import StrEnum
+from typing import Any, Literal
 
-class TargetFieldEnum(str, Enum):
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class TargetFieldEnum(StrEnum):
     TICKER = "ticker"
     SHARES = "shares"
     AVG_PRICE = "avg_price"
@@ -10,62 +12,54 @@ class TargetFieldEnum(str, Enum):
     TAKE_PROFIT = "take_profit"
     STOP_LOSS = "stop_loss"
 
+
 class ColumnMappingSuggestion(BaseModel):
-    mapping: dict[str, Optional[str]] = Field(
-        ...,
-        description="Mapping from user file column header to schema target field or None"
+    mapping: dict[str, str | None] = Field(
+        ..., description="Mapping from user file column header to schema target field or None"
     )
-    confidence: float = Field(
-        default=0.9,
-        ge=0.0,
-        le=1.0,
-        description="Confidence score between 0.0 and 1.0"
-    )
-    notes: Optional[str] = Field(
-        default=None,
-        description="Optional parsing explanation or notes from AI/rule mapper"
-    )
+    confidence: float = Field(default=0.9, ge=0.0, le=1.0, description="Confidence score between 0.0 and 1.0")
+    notes: str | None = Field(default=None, description="Optional parsing explanation or notes from AI/rule mapper")
+
 
 class ImportPreviewResponse(BaseModel):
     filename: str
     columns: list[str]
-    suggested_mapping: dict[str, Optional[str]]
+    suggested_mapping: dict[str, str | None]
     confidence: float
-    notes: Optional[str] = None
+    notes: str | None = None
     preview_rows: list[dict[str, Any]]
     total_rows: int
-    session_token: Optional[str] = None
+    session_token: str | None = None
     warnings: list[str] = []
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ImportConfirmRequest(BaseModel):
-    mapping: dict[str, Optional[str]] = Field(
+    mapping: dict[str, str | None] = Field(
         ...,
-        description="User-confirmed column mapping from file header to target field (ticker, shares, avg_price, sector, take_profit, stop_loss)"
+        description="User-confirmed column mapping from file header to target field (ticker, shares, avg_price, sector, take_profit, stop_loss)",
     )
-    rows: Optional[list[dict[str, Any]]] = Field(
-        default=None,
-        description="Optional full raw parsed rows from client"
-    )
-    session_token: Optional[str] = Field(
-        default=None,
-        description="Optional session token returned from preview endpoint to retrieve cached rows"
+    rows: list[dict[str, Any]] | None = Field(default=None, description="Optional full raw parsed rows from client")
+    session_token: str | None = Field(
+        default=None, description="Optional session token returned from preview endpoint to retrieve cached rows"
     )
     overwrite_existing: bool = Field(
         default=True,
-        description="If true, overwrite existing ticker positions. If false, calculate weighted average position."
+        description="If true, overwrite existing ticker positions. If false, calculate weighted average position.",
     )
+
 
 class ImportItemResult(BaseModel):
     ticker: str
     shares: float
     avg_price: float
-    sector: Optional[str] = None
-    take_profit: Optional[float] = None
-    stop_loss: Optional[float] = None
+    sector: str | None = None
+    take_profit: float | None = None
+    stop_loss: float | None = None
     status: Literal["created", "updated", "failed", "skipped"]
-    message: Optional[str] = None
+    message: str | None = None
+
 
 class ImportResultResponse(BaseModel):
     success: bool

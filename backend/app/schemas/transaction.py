@@ -1,36 +1,41 @@
-from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
+
 
 class TransactionCreate(BaseModel):
     ticker: str
-    type: str # 'BUY' or 'SELL'
+    type: str  # 'BUY' or 'SELL'
     shares: float
     price: float
-    realized_pl: Optional[float] = 0.0
+    realized_pl: float | None = 0.0
+
 
 class TradeTransactionCreate(BaseModel):
     ticker: str
-    type: str # 'BUY' or 'SELL'
+    type: str  # 'BUY' or 'SELL'
     shares: float
     price: float
+
 
 class TransactionResponse(BaseModel):
     id: int
     user_id: int
-    ticker: Optional[str] = None
+    ticker: str | None = None
     type: str
-    shares: Optional[float] = None
-    price: Optional[float] = None
+    shares: float | None = None
+    price: float | None = None
     transaction_date: datetime
-    realized_pl: Optional[float] = 0.0
-    cashflow: Optional[float] = 0.0
+    realized_pl: float | None = 0.0
+    cashflow: float | None = 0.0
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class CashTransactionCreate(BaseModel):
-    type: str # 'DEPOSIT' or 'WITHDRAW'
+    type: str  # 'DEPOSIT' or 'WITHDRAW'
     cash_amount: float
+
 
 class TransactionSummaryResponse(BaseModel):
     available_cash: float
@@ -38,8 +43,11 @@ class TransactionSummaryResponse(BaseModel):
     realized_pl_total: float
     realized_pl_percentage: float
 
+
 class TransactionLog:
-    def __init__(self, ticker: str, action_type: str, shares: float, price: float, realized_pl: float, transaction_date: datetime):
+    def __init__(
+        self, ticker: str, action_type: str, shares: float, price: float, realized_pl: float, transaction_date: datetime
+    ):
         self.ticker = ticker
         self.action_type = action_type
         self.shares = shares

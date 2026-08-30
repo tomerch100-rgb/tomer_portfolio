@@ -1,2 +1,2 @@
 from .base_class import Base
-from .session import get_db, engine, SessionLocal
+from .session import SessionLocal, engine, get_db
