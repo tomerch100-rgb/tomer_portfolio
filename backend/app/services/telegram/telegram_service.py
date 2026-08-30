@@ -16,15 +16,20 @@ from sqlalchemy.orm import Session
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-if not TELEGRAM_TOKEN:
-    raise ValueError("TELEGRAM_TOKEN environment variable is not set")
 
-bot = Bot(token=TELEGRAM_TOKEN)
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production") 
 dp = Dispatcher()
 bot_router = Router()
-
 dp.include_router(bot_router)
+
+bot = None
+if ENVIRONMENT == "testing":
+    logger.info("🧪 Testing mode detected: Telegram bot initialization skipped.")
+else:
+    if not TELEGRAM_TOKEN:
+        raise ValueError("CRITICAL: TELEGRAM_TOKEN environment variable is not set")
+    bot = Bot(token=TELEGRAM_TOKEN)
 
 
 def sync_link_telegram_user(db: Session, token: str, telegram_id: str) -> tuple[str, str | None, int | None]:
@@ -135,7 +140,7 @@ async def command_start_handler(message: TelegramMessage, command: CommandObject
             await message.answer("אירעה שגיאה בבסיס הנתונים במהלך החיבור. אנא נסה שנית מאוחר יותר.")
 
     except Exception as e:
-        logger.error(f"❌ Unhandled error in command_start_handler: {e}", exc_info=True)
+        logger.exception(f"❌ Unhandled error in command_start_handler: {e}", exc_info=True)
         await message.answer("אירעה שגיאה לא צפויה במערכת. אנא נסה שנית מאוחר יותר.")
     finally:
         if should_close_db:

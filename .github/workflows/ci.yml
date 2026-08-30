@@ -50,6 +50,7 @@ jobs:
           DATABASE_URL: "sqlite:///:memory:"
           SECRET_KEY: "ci-secret-key"
           ALGORITHM: "HS256"
+          ENVIRONMENT: "testing"
         # פוצל לשתי שורות נפרדות כדי למנוע התנגשויות בזיכרון וב-DB!
         run: |
           pytest tests/unit -v --cov=backend/app --cov-fail-under=70
