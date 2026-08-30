@@ -8,6 +8,16 @@ pytest tests/unit tests/integration -v --cov=app --cov-report=term-missing
 pytest tests/e2e -v
 
 
+# בדיקה של הפרוייקט
+./run_ci_local.sh
+
+
+
+#מחפש בעיות של הזחות וכאלה ומתקן 
+ruff check . --fix
+ruff format .
+
+
 #פקודה לעדכן את הקובץ של הספריות 
 pip freeze > requirements.txt
 
