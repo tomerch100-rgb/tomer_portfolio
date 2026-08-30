@@ -9,30 +9,36 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 safe = HTTPBearer(auto_error=False)
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+SECRET_KEY = os.getenv("SECRET_KEY", "default-fallback-secret-key-12345678")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
-def hash_password (password)  :
-# צריך להפוך את הסיסמה ל-bytes
+def hash_password(password: str) -> str:
+    # צריך להפוך את הסיסמה ל-bytes
     bytes_password = password.encode('utf-8')
-# יוצרים salt ומצפינים
+    # יוצרים salt ומצפינים
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(bytes_password, salt)
     return hashed.decode()
 
-def verify_password (stored_hash,check_password) : 
+def verify_password(stored_hash: str, check_password: str) -> bool: 
     bytes_hash = stored_hash.encode('utf-8')
-    bytes_password =check_password.encode('utf-8')
-    return bcrypt.checkpw(bytes_password,bytes_hash)
+    bytes_password = check_password.encode('utf-8')
+    return bcrypt.checkpw(bytes_password, bytes_hash)
       
-def creat_token (user_id) :
-    expire_time = datetime.now(timezone.utc) + timedelta(minutes=60)       
-    payload = {
-        "sub" : str(user_id),
-        "exp" : expire_time
-    }
-    token = jwt.encode(payload,SECRET_KEY,ALGORITHM)
+def creat_token(user_id):
+    expire_time = datetime.now(timezone.utc) + timedelta(minutes=60)
+    if isinstance(user_id, dict):
+        sub = str(user_id.get("sub") or user_id.get("user_id") or "1")
+        payload = {"sub": sub, "exp": expire_time, **user_id}
+    else:
+        payload = {
+            "sub": str(user_id),
+            "exp": expire_time
+        }
+    token = jwt.encode(payload, SECRET_KEY, ALGORITHM)
     return token
+
+create_access_token = creat_token
     
 
 def verify_token (token:str) :
