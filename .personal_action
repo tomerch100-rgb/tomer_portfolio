@@ -1,0 +1,47 @@
+# 1. הרצת כל בדיקות ה-Unit וה-Integration:
+pytest tests/unit tests/integration -v
+
+# 2. הרצת הבדיקות עם דוח כיסוי קוד מפורט (Coverage):
+pytest tests/unit tests/integration -v --cov=app --cov-report=term-missing
+
+# 3. הרצת בדיקות ה-E2E בדפדפן Playwright:
+pytest tests/e2e -v
+
+
+#פקודה לעדכן את הקובץ של הספריות 
+pip freeze > requirements.txt
+
+
+
+#פקודות להתקין את הקובץ של הספריות 
+pip install -r requirements.txt
+
+
+Act as a Senior QA Automation Engineer & Full-Stack Developer on the TomerVest project.
+
+🎯 Objective:
+I have added/modified a feature in the project, and I need you to create comprehensive, production-grade tests to fully cover it without breaking any existing test suites.
+
+🛠️ Details of the Feature:
+- Feature Name / Description: [הסבר קצר על הפיצ'ר שנוסף/שונה]
+- Backend Files (Routers/Services/Models): [למשל: backend/app/api/routers/analysis.py, app/services/ai_service.py]
+- Frontend Files / Components (if relevant): [למשל: frontend/src/pages/AIStockResearch.jsx]
+
+📌 Test Requirements & Guidelines:
+1. Test Architecture Alignment:
+   - Reuse our existing fixtures from `tests/conftest.py` (`client`, `sync_client`, `test_user`, `auth_headers`, `db_session`, `mock_redis_cache`, `mock_external_stock_services`).
+   - Place tests in the correct directory:
+     * Unit Tests: `tests/unit/test_<feature_name>.py` (pure business logic, calculations, timeouts, parsers).
+     * Integration Tests: `tests/integration/test_<feature_name>_api.py` (FastAPI endpoint calls, status codes, auth checks, DB assertions).
+     * E2E Tests (if UI flow): `tests/e2e/test_<feature_name>_flow.py` (Playwright user interactions).
+
+2. Coverage & Edge Cases to Test:
+   - Happy Path: Successful requests with valid payloads and authenticated user.
+   - Validation & Schema: Invalid payload formats, missing required fields (HTTP 422/400).
+   - Authentication & Authorization: Unauthenticated requests returning HTTP 401.
+   - External Services Mocking: Ensure all external I/O (AI, Alpaca, Telegram) is mocked so tests run 100% network-isolated.
+   - Edge Cases: Empty responses, duplicate entries, timeout failover, boundary limits.
+
+3. Execution & Verification:
+   - Run `pytest tests/unit tests/integration -v` to verify that all new tests AND all existing tests pass with a 100% success rate.
+   - If any test fails, automatically fix it before concluding.
