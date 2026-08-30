@@ -17,20 +17,34 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 dp = Dispatcher()
 bot_router = Router()
 dp.include_router(bot_router)
 
-bot = None
-if ENVIRONMENT == "testing":
-    logger.info("🧪 Testing mode detected: Telegram bot initialization skipped.")
-else:
-    TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-    if not TELEGRAM_TOKEN:
-        raise ValueError("CRITICAL: TELEGRAM_TOKEN environment variable is not set")
-    bot = Bot(token=TELEGRAM_TOKEN)
+bot: Bot | None = None
+
+
+def init_telegram_bot() -> Bot | None:
+    global bot
+    env = os.getenv("ENVIRONMENT", "production").lower()
+    if env in ("test", "testing"):
+        logger.info("🧪 Testing mode detected: Telegram bot initialization skipped.")
+        return None
+    token = os.getenv("TELEGRAM_TOKEN")
+    if not token:
+        logger.warning("⚠️ TELEGRAM_TOKEN environment variable is not set")
+        return None
+    try:
+        bot = Bot(token=token)
+        return bot
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to initialize Telegram bot: {e}")
+        return None
+
+
+if ENVIRONMENT.lower() not in ("test", "testing") and os.getenv("TELEGRAM_TOKEN"):
+    init_telegram_bot()
 
 
 def sync_link_telegram_user(db: Session, token: str, telegram_id: str) -> tuple[str, str | None, int | None]:

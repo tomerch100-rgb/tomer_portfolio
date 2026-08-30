@@ -107,7 +107,9 @@ async def check_prices_and_alert():
             direction = alert.alert_direction
 
             is_hit = False
-            if direction == "UP" and current_price >= target or direction == "DOWN" and current_price <= target:
+            if (direction in ("UP", "ABOVE") and current_price >= target) or (
+                direction in ("DOWN", "BELOW") and current_price <= target
+            ):
                 is_hit = True
 
             if is_hit:
