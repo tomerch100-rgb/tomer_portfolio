@@ -13,6 +13,7 @@ from app.api.routers import (
     watchlist,
     ws_router,
 )
+from app.services.telegram.telegram_service import init_telegram_bot
 from app.api.routers.telegram import telegram_link
 from app.api.routers.telegram.webhook_telegram import router as telegram_router
 from app.db.base_class import Base
@@ -30,6 +31,7 @@ scheduler = AsyncIOScheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_telegram_bot()
     # 1. Register Telegram Webhook if configured
     WEBHOOK_URL = os.getenv("WEBHOOK_URL")
     if WEBHOOK_URL:
