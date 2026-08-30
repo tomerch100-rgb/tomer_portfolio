@@ -13,13 +13,12 @@ from app.api.routers import (
     watchlist,
     ws_router,
 )
-from app.services.telegram.telegram_service import init_telegram_bot
+from app.services.telegram.telegram_service import init_telegram_bot , bot
 from app.api.routers.telegram import telegram_link
 from app.api.routers.telegram.webhook_telegram import router as telegram_router
 from app.db.base_class import Base
 from app.db.session import engine
 from app.services.stock_scanner import check_prices_and_alert
-from app.services.telegram.telegram_service import bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -34,7 +33,8 @@ async def lifespan(app: FastAPI):
     init_telegram_bot()
     # 1. Register Telegram Webhook if configured
     WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-    if WEBHOOK_URL:
+    if WEBHOOK_URL and bot:
+        await bot.set_webhook(url=full_webhook_path)
         full_webhook_path = f"{WEBHOOK_URL}/api/telegram/webhook"
         try:
             await bot.set_webhook(url=full_webhook_path)
