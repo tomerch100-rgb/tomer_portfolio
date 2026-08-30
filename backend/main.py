@@ -13,7 +13,7 @@ from app.api.routers import (
     watchlist,
     ws_router,
 )
-from app.services.telegram.telegram_service import init_telegram_bot , bot
+from app.services.telegram.telegram_service import bot, init_telegram_bot
 from app.api.routers.telegram import telegram_link
 from app.api.routers.telegram.webhook_telegram import router as telegram_router
 from app.db.base_class import Base
@@ -33,9 +33,8 @@ async def lifespan(app: FastAPI):
     init_telegram_bot()
     # 1. Register Telegram Webhook if configured
     WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+    full_webhook_path = f"{WEBHOOK_URL}/api/telegram/webhook"
     if WEBHOOK_URL and bot:
-        await bot.set_webhook(url=full_webhook_path)
-        full_webhook_path = f"{WEBHOOK_URL}/api/telegram/webhook"
         try:
             await bot.set_webhook(url=full_webhook_path)
             print(f"✅ Webhook registered at: {full_webhook_path}")
@@ -60,12 +59,12 @@ async def lifespan(app: FastAPI):
         print("🛑 Scheduler shutdown complete.")
     except Exception as e:
         print(f"⚠️ Scheduler shutdown error: {e}")
-
-    try:
-        await bot.delete_webhook()
-        print("🛑 Webhook deleted")
-    except Exception as e:
-        print(f"⚠️ Webhook deletion warning: {e}")
+    if bot:
+        try:
+            await bot.delete_webhook()
+            print("🛑 Webhook deleted")
+        except Exception as e:
+            print(f"⚠️ Webhook deletion warning: {e}")
 
 
 app = FastAPI(
