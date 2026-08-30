@@ -1,25 +1,25 @@
 import asyncio
 import logging
 import os
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import CommandObject, CommandStart
 from aiogram.types import Message as TelegramMessage
-from app.core.ws_manager import manager
-from app.db.session import SessionLocal
-from app.models.user import User
 from dotenv import load_dotenv
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
+
+from app.core.ws_manager import manager
+from app.db.session import SessionLocal
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
-dp = Dispatcher()
 bot_router = Router()
+dp = Dispatcher()
 dp.include_router(bot_router)
 
 bot: Bot | None = None
@@ -27,24 +27,27 @@ bot: Bot | None = None
 
 def init_telegram_bot() -> Bot | None:
     global bot
+
+    if bot is not None:
+        return bot
+
     env = os.getenv("ENVIRONMENT", "production").lower()
     if env in ("test", "testing"):
         logger.info("🧪 Testing mode detected: Telegram bot initialization skipped.")
         return None
+
     token = os.getenv("TELEGRAM_TOKEN")
     if not token:
         logger.warning("⚠️ TELEGRAM_TOKEN environment variable is not set")
         return None
+
     try:
         bot = Bot(token=token)
+        logger.info("🤖 Telegram bot initialized successfully.")
         return bot
     except Exception as e:
         logger.warning(f"⚠️ Failed to initialize Telegram bot: {e}")
         return None
-
-
-if ENVIRONMENT.lower() not in ("test", "testing") and os.getenv("TELEGRAM_TOKEN"):
-    init_telegram_bot()
 
 
 def sync_link_telegram_user(db: Session, token: str, telegram_id: str) -> tuple[str, str | None, int | None]:
