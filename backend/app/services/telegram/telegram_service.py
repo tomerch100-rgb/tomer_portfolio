@@ -27,6 +27,7 @@ bot = None
 if ENVIRONMENT == "testing":
     logger.info("🧪 Testing mode detected: Telegram bot initialization skipped.")
 else:
+    TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
     if not TELEGRAM_TOKEN:
         raise ValueError("CRITICAL: TELEGRAM_TOKEN environment variable is not set")
     bot = Bot(token=TELEGRAM_TOKEN)
