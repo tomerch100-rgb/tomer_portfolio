@@ -53,7 +53,7 @@ jobs:
           ENVIRONMENT: "testing"
         # פוצל לשתי שורות נפרדות כדי למנוע התנגשויות בזיכרון וב-DB!
         run: |
-          pytest tests/unit tests/integration -v --cov=backend/app --cov-fail-under=70
+          pytest tests/unit tests/integration -v --cov=backend/app --cov-report=term-missing --cov-fail-under=70
 
   # 3. אימות קומפילציה של הפרונטאנד (רץ תמיד)
   frontend-build-check:
