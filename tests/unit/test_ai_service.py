@@ -129,3 +129,65 @@ async def test_generate_stock_research_uses_cache(monkeypatch):
 
     result = await generate_stock_research("GOOGL", language="he")
     assert result["summary"] == "Cached report from Redis"
+
+
+def test_analysis_router_endpoints(monkeypatch):
+    """Test analysis router endpoints with FastAPI TestClient."""
+    from fastapi.testclient import TestClient
+    from main import app
+
+    client = TestClient(app)
+
+    # 1. Test /analysis/stock_details
+    async def mock_details(ticker):
+        return {"ticker": ticker, "current_price": 150.0, "company_name": "Test Company"}
+
+    monkeypatch.setattr("app.services.portfolio.get_stock_details", mock_details)
+    res = client.get("/analysis/stock_details?spec_stock=AAPL")
+    assert res.status_code == 200
+    assert res.json()["current_price"] == 150.0
+
+    # 2. Test /analysis/stock_analysis
+    async def mock_analysis(ticker):
+        return {"ticker": ticker, "analysis": "Strong buy"}
+
+    monkeypatch.setattr("app.services.portfolio.stock_analysis", mock_analysis)
+    res = client.get("/analysis/stock_analysis?spec_stock=AAPL")
+    assert res.status_code == 200
+
+    # 3. Test /analysis/ai_research success
+    async def mock_ai_research(ticker, language):
+        return {
+            "ticker": ticker,
+            "company_name": "Test Co",
+            "summary": "Solid",
+            "score": {"growth": 80, "valuation": 70, "profitability": 90, "overall_score": 80},
+            "bull_case": ["Growth"],
+            "bear_case": ["Competition"],
+            "what_to_monitor": "Earnings",
+            "target_recommendation": "BUY",
+        }
+
+    monkeypatch.setattr("app.api.routers.analysis.generate_stock_research", mock_ai_research)
+    res = client.get("/analysis/ai_research?ticker=AAPL&language=he")
+    assert res.status_code == 200
+    assert res.json()["score"]["overall_score"] == 80
+
+    # 4. Test /analysis/ai_research 503 error handling on RuntimeError
+    async def mock_ai_error(ticker, language):
+        raise RuntimeError("All providers failed")
+
+    monkeypatch.setattr("app.api.routers.analysis.generate_stock_research", mock_ai_error)
+    res = client.get("/analysis/ai_research?ticker=FAIL&language=he")
+    assert res.status_code == 503
+    assert "temporarily unavailable" in res.json()["detail"]
+
+    # 5. Test /analysis/ai_research 400 error handling on ValueError
+    async def mock_bad_ticker(ticker, language):
+        raise ValueError("Invalid ticker format")
+
+    monkeypatch.setattr("app.api.routers.analysis.generate_stock_research", mock_bad_ticker)
+    res = client.get("/analysis/ai_research?ticker=BAD&language=he")
+    assert res.status_code == 400
+    assert "Invalid ticker format" in res.json()["detail"]
+

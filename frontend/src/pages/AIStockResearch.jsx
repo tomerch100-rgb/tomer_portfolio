@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
     Sparkles,
@@ -16,11 +16,14 @@ import {
     RefreshCw,
     Languages,
     ArrowUpRight,
-    ArrowDownRight,
     AlertCircle,
-    Eye,
     BookmarkPlus,
-    ExternalLink
+    ExternalLink,
+    Zap,
+    Cpu,
+    LineChart,
+    PieChart,
+    Compass
 } from "lucide-react";
 import { fetchAIStockResearch, fetchStockDetails } from "../services/aiResearchService";
 
@@ -29,19 +32,21 @@ const POPULAR_TICKERS = ["NVDA", "AAPL", "TSLA", "MSFT", "AMZN", "GOOGL", "META"
 export default function AIStockResearch() {
     const { ticker: paramTicker } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
-    
-    const initialTicker = (paramTicker || searchParams.get("ticker") || "NVDA").toUpperCase();
-    const [inputTicker, setInputTicker] = useState(initialTicker);
-    const [activeTicker, setActiveTicker] = useState(initialTicker);
+
+    // Do NOT default to auto-analyzing NVDA. Initialize ticker from URL if present or empty string.
+    const urlTicker = (paramTicker || searchParams.get("ticker") || "").toUpperCase();
+    const [inputTicker, setInputTicker] = useState(urlTicker);
+    const [activeTicker, setActiveTicker] = useState("");
     const [language, setLanguage] = useState("he"); // 'he' | 'en'
 
+    // Initial state is strictly idle and not loading
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [report, setReport] = useState(null);
     const [stockDetails, setStockDetails] = useState(null);
 
     const loadResearch = useCallback(async (symbolToFetch, langToUse) => {
-        if (!symbolToFetch) return;
+        if (!symbolToFetch || !symbolToFetch.trim()) return;
         const cleanSymbol = symbolToFetch.trim().toUpperCase();
         setIsLoading(true);
         setError(null);
@@ -68,18 +73,17 @@ export default function AIStockResearch() {
             setActiveTicker(cleanSymbol);
         } catch (err) {
             console.error("AI Research Error:", err);
-            const msg = err.response?.data?.detail || err.message || "לא הצלחנו להפיק דוח מחקר AI עבור מניה זו. אנא נסה שנית.";
+            const msg =
+                err.response?.data?.detail ||
+                err.message ||
+                "לא הצלחנו להפיק דוח מחקר AI עבור מניה זו. אנא נסה שנית.";
             setError(msg);
         } finally {
             setIsLoading(false);
         }
     }, []);
 
-    // Initial load & when params change
-    useEffect(() => {
-        loadResearch(initialTicker, language);
-    }, [initialTicker, loadResearch]);
-
+    // Explicit User Trigger Handlers
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (!inputTicker.trim()) return;
@@ -258,7 +262,7 @@ export default function AIStockResearch() {
                             <p className="text-xs sm:text-sm text-rose-400/90 leading-relaxed">{error}</p>
                             <button
                                 type="button"
-                                onClick={() => loadResearch(activeTicker, language)}
+                                onClick={() => loadResearch(inputTicker || activeTicker, language)}
                                 className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 bg-rose-900/40 hover:bg-rose-800/60 border border-rose-700/50 rounded-xl text-xs font-bold text-white transition-all cursor-pointer"
                             >
                                 <RefreshCw className="w-3.5 h-3.5" /> נסה שוב
@@ -281,6 +285,58 @@ export default function AIStockResearch() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="h-64 bg-[#121214] rounded-3xl border border-zinc-800" />
                             <div className="h-64 bg-[#121214] rounded-3xl border border-zinc-800" />
+                        </div>
+                    </div>
+                )}
+
+                {/* Empty / Idle State View */}
+                {!isLoading && !report && !error && (
+                    <div className="bg-gradient-to-b from-[#121214] to-[#0c0c0e] border border-zinc-800/80 rounded-3xl p-8 sm:p-12 text-center shadow-2xl relative overflow-hidden space-y-8 animate-in fade-in duration-500">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+                        
+                        <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+                            <div className="w-16 h-16 mx-auto bg-gradient-to-tr from-emerald-500/20 via-teal-500/20 to-emerald-400/10 border border-emerald-500/30 rounded-3xl flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-950/40">
+                                <Compass className="w-8 h-8 animate-spin-slow" />
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                                מוכן לניתוח מניה עם מנוע ה-AI של TomerVest
+                            </h2>
+                            <p className="text-sm text-zinc-400 leading-relaxed">
+                                הזן סימול מניה בשורת החיפוש למעלה או בחר באחת ממניות החיפוש המהיר כדי להפיק דוח אנליסטים מקיף הכולל ציוני ביצועים, תרחישים שוריים/דוביים וזרזים מרכזיים.
+                            </p>
+                        </div>
+
+                        {/* Feature Highlights Bento */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto relative z-10 text-right">
+                            <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/70 space-y-2">
+                                <div className="p-2 w-fit rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                                    <Zap className="w-4 h-4" />
+                                </div>
+                                <h4 className="text-sm font-bold text-zinc-200">ציוני ביצועים כמותיים</h4>
+                                <p className="text-xs text-zinc-500 leading-normal">
+                                    דירוג מבוסס נתונים לרווחיות, תמחור, פוטנציאל צמיחה וציון כללי משוקלל (0-100).
+                                </p>
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/70 space-y-2">
+                                <div className="p-2 w-fit rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                                    <Cpu className="w-4 h-4" />
+                                </div>
+                                <h4 className="text-sm font-bold text-zinc-200">תרחישי Bull vs Bear</h4>
+                                <p className="text-xs text-zinc-500 leading-normal">
+                                    מיפוי סיכונים ואיומים אל מול מנועי צמיחה והזדמנויות השקעה בשוק.
+                                </p>
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/70 space-y-2">
+                                <div className="p-2 w-fit rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                                    <Radar className="w-4 h-4" />
+                                </div>
+                                <h4 className="text-sm font-bold text-zinc-200">זרזים ואינדיקטורים</h4>
+                                <p className="text-xs text-zinc-500 leading-normal">
+                                    זיהוי אירועי מפתח, דוחות כספיים והכרזות שצפויים להשפיע על תנועת המחיר.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 )}

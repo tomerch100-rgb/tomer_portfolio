@@ -3,17 +3,16 @@ import json
 import logging
 import os
 import re
-from google.genai import types
-from google import genai
 
-from app.services.cache_service import get_cached_data, set_cached_data
-from app.services.portfolio.portfolio_analytics_service import get_stock_details
+from google import genai
+from google.genai import types
 from openai import APIConnectionError, APIError, APITimeoutError, AsyncOpenAI
 from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__)
+from app.services.cache_service import get_cached_data, set_cached_data
+from app.services.portfolio.portfolio_analytics_service import get_stock_details
 
-client = genai.Client()
+logger = logging.getLogger(__name__)
 
 # --- Configuration Constants ---
 AI_TIMEOUT_SECONDS: float = 15.0
@@ -40,7 +39,7 @@ class StockResearchReport(BaseModel):
     target_recommendation: str | None = Field(default="HOLD", description="המלצת פעולה: BUY, HOLD, או SELL")
 
 
-# Schema instructions for OpenAI-compatible providers (Groq & OpenRouter)
+# Schema instructions for OpenAI & Gemini prompts
 SCHEMA_INSTRUCTIONS = f"""
 You MUST return ONLY a valid JSON object matching this exact schema:
 {json.dumps(StockResearchReport.model_json_schema(), ensure_ascii=False, indent=2)}
@@ -73,19 +72,21 @@ def clean_json_response(text: str) -> dict:
 
 
 async def call_gemini(prompt: str) -> str:
-    """
-    Call Google Gemini 1.5 Flash asynchronously with a strict timeout (New SDK).
-    """
+    """Call Google Gemini 3.6 Flash asynchronously with explicit client and strict timeout."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY is not configured in environment.")
 
-    # שימוש בלקוח האסינכרוני (aio) של החבילה החדשה
+    # Explicit client initialization per call to prevent global initialization crashes
+    client = genai.Client(api_key=api_key)
+    full_prompt = f"{prompt}\n\n{SCHEMA_INSTRUCTIONS}"
+
     generation_coroutine = client.aio.models.generate_content(
-        model="gemini-1.5-flash",
-        contents=prompt,
+        model="gemini-3.6-flash",
+        contents=full_prompt,
         config=types.GenerateContentConfig(
-            response_mime_type="application/json", response_schema=StockResearchReport, temperature=0.2
+            response_mime_type="application/json",
+            temperature=0.2,
         ),
     )
 
@@ -99,9 +100,7 @@ async def call_gemini(prompt: str) -> str:
 
 
 async def call_groq(prompt: str) -> str:
-    """
-    Call Groq Cloud (Llama-3.3-70b-versatile) asynchronously with a strict timeout.
-    """
+    """Call Groq Cloud (openai/gpt-oss-20b) asynchronously with a strict timeout."""
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
         raise ValueError("GROQ_API_KEY is not configured in environment.")
@@ -109,7 +108,7 @@ async def call_groq(prompt: str) -> str:
     client = AsyncOpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1", timeout=AI_TIMEOUT_SECONDS)
 
     response = await client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-20b",
         messages=[
             {
                 "role": "system",
@@ -125,9 +124,7 @@ async def call_groq(prompt: str) -> str:
 
 
 async def call_openrouter(prompt: str) -> str:
-    """
-    Call OpenRouter (Meta Llama 3.3 Free Tier) asynchronously with a strict timeout.
-    """
+    """Call OpenRouter (nvidia/nemotron-3.5-lightning:free) asynchronously with a strict timeout."""
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise ValueError("OPENROUTER_API_KEY is not configured in environment.")
@@ -135,7 +132,7 @@ async def call_openrouter(prompt: str) -> str:
     client = AsyncOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1", timeout=AI_TIMEOUT_SECONDS)
 
     response = await client.chat.completions.create(
-        model="meta-llama/llama-3.3-70b-instruct:free",
+        model="nvidia/nemotron-3.5-lightning:free",
         messages=[
             {
                 "role": "system",
@@ -154,10 +151,10 @@ async def call_openrouter(prompt: str) -> str:
 
 
 async def run_ai_roulette(prompt: str) -> dict:
-    """
-    Executes AI requests across providers with strict 15.0s timeouts and graceful failover:
-    1. Groq (Ultra-fast Llama-3.3-70b)
-    2. Gemini (Google Native Flash)
+    """Executes AI requests across providers with strict 15.0s timeouts and graceful failover:
+
+    1. Groq (Ultra-fast Llama-3.1-8b-instant)
+    2. Gemini (Google Native Gemini 2.0 Flash)
     3. OpenRouter (Multi-model free tier)
     """
     providers = [
@@ -201,8 +198,7 @@ async def run_ai_roulette(prompt: str) -> dict:
 
 
 async def generate_stock_research(ticker: str, language: str = "he") -> dict:
-    """
-    Generates an institutional-grade AI research report for a stock:
+    """Generates an institutional-grade AI research report for a stock:
 
     Step 1: Check Redis / In-Memory cache first. If found, return immediately in 0ms.
     Step 2: On cache miss, fetch real-time market data & fundamental valuation metrics.
@@ -282,7 +278,7 @@ Instructions:
     research_report["company_name"] = company_name
 
     # 5. Persist result in Redis / In-Memory cache with configured TTL (4 hours)
-    await set_cached_data(cache_key, research_report, expiration=AI_CACHE_TTL_SECONDS)
+    await set_cached_data(cache_key, research_report, ttl_seconds=AI_CACHE_TTL_SECONDS)
     logger.info(f"💾 [CACHE STORE] Persisted AI research for {clean_ticker} with TTL={AI_CACHE_TTL_SECONDS}s")
 
     return research_report

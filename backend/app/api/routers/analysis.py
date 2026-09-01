@@ -1,6 +1,11 @@
+import logging
+
+from fastapi import APIRouter, HTTPException, Query, status
+
 import app.services.portfolio as pf
 from app.services.ai_service import generate_stock_research
-from fastapi import APIRouter, Query
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
@@ -20,4 +25,23 @@ async def ai_stock_research(
     ticker: str = Query(..., description="סימול מניה למחקר AI"),
     language: str = Query("he", description="שפת הדוח (he / en)"),
 ):
-    return await generate_stock_research(ticker=ticker, language=language)
+    try:
+        return await generate_stock_research(ticker=ticker, language=language)
+    except ValueError as ve:
+        logger.warning(f"⚠️ Bad request for AI stock research ({ticker}): {ve}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve),
+        ) from ve
+    except RuntimeError as re:
+        logger.error(f"🚨 AI research unavailable for ({ticker}): {re}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI analysis is temporarily unavailable. Providers failed.",
+        ) from re
+    except Exception as e:
+        logger.exception(f"🚨 Unexpected failure in AI stock research ({ticker}): {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI analysis is temporarily unavailable. Please try again later.",
+        ) from e
