@@ -12,15 +12,11 @@ def test_multi_tab_realtime_synchronization(browser: Browser, frontend_url: str)
 
     # Tab 1 navigates to Login
     tab1.goto(f"{frontend_url}/login", wait_until="domcontentloaded")
-    expect(tab1.locator("input[placeholder='שם משתמש']")).to_be_visible(
-        timeout=15000
-    )
+    expect(tab1.locator("input[placeholder='שם משתמש']")).to_be_visible(timeout=15000)
 
     # Tab 2 navigates to Register
     tab2.goto(f"{frontend_url}/register", wait_until="domcontentloaded")
-    expect(tab2.locator("input[placeholder='בחר שם משתמש']")).to_be_visible(
-        timeout=15000
-    )
+    expect(tab2.locator("input[placeholder='בחר שם משתמש']")).to_be_visible(timeout=15000)
 
     # Simulate cross-tab event dispatch
     tab1.evaluate("""
@@ -32,9 +28,7 @@ def test_multi_tab_realtime_synchronization(browser: Browser, frontend_url: str)
     """)
 
     # Assert Tab 2 can read updated storage without reloading
-    val = tab2.evaluate(
-        "() => window.localStorage.getItem('test_cross_tab_key')"
-    )
+    val = tab2.evaluate("() => window.localStorage.getItem('test_cross_tab_key')")
     assert val == "sync_ok"
 
     context.close()
