@@ -6,6 +6,7 @@ from app.api.routers import (
     auth,
     charts_r,
     display,
+    feedback_router,
     home_page,
     import_router,
     orders,
@@ -112,5 +113,6 @@ app.include_router(telegram_link.router)
 app.include_router(ws_router.router)
 app.include_router(import_router.router)
 app.include_router(stocks_router.router)
+app.include_router(feedback_router.router)
 
 Base.metadata.create_all(bind=engine)

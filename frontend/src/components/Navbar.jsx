@@ -48,6 +48,7 @@ function Navbar() {
         { to: "/history", label: "היסטוריית פעולות" },
         { to: "/watchlist/AAPL", label: "רשימת מעקב" },
         { to: "/charts/AAPL", label: "גרפים" },
+        { to: "/feedback", label: "משוב 💬" },
     ];
 
     return (

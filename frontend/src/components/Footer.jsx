@@ -12,6 +12,7 @@ function Footer() {
                     <Link to="/dashbord" className="hover:text-zinc-300 transition-colors">דאשבורד</Link>
                     <Link to="/orders" className="hover:text-zinc-300 transition-colors">פקודות מסחר</Link>
                     <Link to="/watchlist/AAPL" className="hover:text-zinc-300 transition-colors">רשימת מעקב</Link>
+                    <Link to="/feedback" className="hover:text-emerald-400 text-zinc-400 transition-colors">משוב ורעיונות 💬</Link>
                 </div>
             </div>
         </footer>
