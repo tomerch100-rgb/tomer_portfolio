@@ -9,6 +9,7 @@ from app.api.routers import (
     home_page,
     import_router,
     orders,
+    stocks_router,
     transaction_router,
     watchlist,
     ws_router,
@@ -110,5 +111,6 @@ app.include_router(telegram_router)
 app.include_router(telegram_link.router)
 app.include_router(ws_router.router)
 app.include_router(import_router.router)
+app.include_router(stocks_router.router)
 
 Base.metadata.create_all(bind=engine)

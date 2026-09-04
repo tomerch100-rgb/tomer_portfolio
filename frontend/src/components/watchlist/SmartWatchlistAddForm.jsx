@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Loader2, TrendingUp, TrendingDown, Bell, DollarSign, AlertCircle, Check } from "lucide-react";
 import { addWatchlistItem, getLatestStockPrice } from "../../services/watchlistService";
+import StockSearchAutocomplete from "../StockSearchAutocomplete";
 
 /**
  * SmartWatchlistAddForm
@@ -114,22 +115,13 @@ function SmartWatchlistAddForm({ onSuccess, className = "" }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {/* Ticker Input */}
                 <div className="relative">
-                    <input
-                        type="text"
+                    <StockSearchAutocomplete
                         value={ticker}
-                        onChange={(e) => setTicker(e.target.value.toUpperCase())}
-                        placeholder="סימול (לדוגמה NVDA)"
-                        maxLength={10}
-                        required
-                        className="w-full pl-3 pr-9 py-2.5 bg-zinc-950/80 border border-zinc-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none transition-all text-xs font-bold uppercase font-mono text-right"
+                        onChange={(val) => setTicker(val.toUpperCase())}
+                        onSelect={(stock) => setTicker(stock.symbol.toUpperCase())}
+                        placeholder="סימול או שם חברה (למשל: NVDA)..."
+                        inputClassName="pl-3 pr-9 py-2.5 bg-zinc-950/80 border-zinc-800 focus:border-emerald-500 rounded-xl text-xs font-bold uppercase font-mono"
                     />
-                    <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-zinc-500">
-                        {isCheckingPrice ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
-                        ) : (
-                            <DollarSign className="w-3.5 h-3.5" />
-                        )}
-                    </span>
                 </div>
 
                 {/* Target Price Input */}

@@ -7,6 +7,7 @@ import {
     Search, Star, Trash2, TrendingUp, TrendingDown, Clock, Activity,
     BarChart2, Zap, ArrowUpRight, ArrowDownRight, Check, Plus
 } from "lucide-react";
+import StockSearchAutocomplete from "../components/StockSearchAutocomplete";
 
 const TIMEFRAMES = [
     { label: "1 דקה", value: "1" },
@@ -152,21 +153,13 @@ function StockPage() {
                     {/* Add Stock to Favorites Form */}
                     <form onSubmit={handleAddFavorite} className="flex items-center gap-2">
                         <div className="relative w-full">
-                            <input
-                                type="text"
+                            <StockSearchAutocomplete
                                 value={searchInput}
-                                onChange={(e) => setSearchInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    e.stopPropagation();
-                                    if (e.key === "Enter") handleAddFavorite(e);
-                                }}
-                                onKeyUp={(e) => e.stopPropagation()}
-                                placeholder="הוסף מניה (למשל: SMR)..."
-                                className="w-full pl-3 pr-8 py-2 bg-zinc-900 border border-zinc-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-zinc-100 placeholder-zinc-500 text-xs font-semibold uppercase font-mono transition-all text-right"
+                                onChange={(val) => setSearchInput(val.toUpperCase())}
+                                onSelect={(stock) => setSearchInput(stock.symbol.toUpperCase())}
+                                placeholder="הוסף מניה (למשל: NVDA)..."
+                                inputClassName="pl-3 pr-8 py-2 bg-zinc-900 border-zinc-800 focus:border-emerald-500 rounded-xl text-xs font-semibold uppercase font-mono"
                             />
-                            <span className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-zinc-500">
-                                <Plus className="w-3.5 h-3.5" />
-                            </span>
                         </div>
                         <button
                             type="submit"

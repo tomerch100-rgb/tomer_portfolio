@@ -26,6 +26,7 @@ import {
     Compass
 } from "lucide-react";
 import { fetchAIStockResearch, fetchStockDetails } from "../services/aiResearchService";
+import StockSearchAutocomplete from "../components/StockSearchAutocomplete";
 
 const POPULAR_TICKERS = ["NVDA", "AAPL", "TSLA", "MSFT", "AMZN", "GOOGL", "META", "AMD"];
 
@@ -202,15 +203,12 @@ export default function AIStockResearch() {
                 <div className="bg-[#121214] border border-zinc-800/90 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
                     <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                         <div className="relative flex-1">
-                            <span className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-zinc-500">
-                                <Search className="w-5 h-5" />
-                            </span>
-                            <input
-                                type="text"
+                            <StockSearchAutocomplete
                                 value={inputTicker}
-                                onChange={(e) => setInputTicker(e.target.value.toUpperCase())}
-                                placeholder="הזן סימול מניה (למשל: NVDA, AAPL, TSLA)..."
-                                className="w-full pl-4 pr-12 py-3.5 bg-zinc-900/90 border border-zinc-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-2xl text-zinc-100 placeholder-zinc-500 text-sm sm:text-base font-mono font-bold tracking-wide uppercase transition-all duration-200"
+                                onChange={(val) => setInputTicker(val.toUpperCase())}
+                                onSelect={(stock) => setInputTicker(stock.symbol.toUpperCase())}
+                                placeholder="הזן סימול מניה או שם חברה (למשל: NVDA, Apple, Tesla)..."
+                                inputClassName="pl-4 pr-10 py-3.5 bg-zinc-900/90 border-zinc-800 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-2xl text-sm sm:text-base font-mono font-bold tracking-wide uppercase"
                             />
                         </div>
 
