@@ -44,7 +44,7 @@ function Navbar() {
         { to: "/deep-analysis", label: "ניתוח תיק לעומק" },
         { to: "/analytics", label: "ביצועים ואנליזה" },
         { to: "/ai-research", label: "מחקר AI 🤖" },
-        { to: "/orders", label: "פקודות מסחר" },
+        { to: "/orders", label: " פקודות מסחר והעלאת אקסל" },
         { to: "/history", label: "היסטוריית פעולות" },
         { to: "/watchlist/AAPL", label: "רשימת מעקב" },
         { to: "/charts/AAPL", label: "גרפים" },
